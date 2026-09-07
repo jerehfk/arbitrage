@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<meta name="description" content="Arbitrage-Rechner für Sportwetten: Quoten eintragen, Einsätze so verteilen, dass jeder Ausgang dieselbe Auszahlung bringt.">
+<meta name="description" content="Arbitrage-Rechner für Sportwetten: Quoten eintragen, Einsätze so verteilen, dass jeder Ausgang dieselbe Auszahlung bringt — inklusive Boni.">
 <title>Sichere Wette</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 
@@ -25,6 +25,7 @@
     --good-soft: rgba(28, 107, 73, 0.12);
     --bad: #A2352A;
     --bad-soft: rgba(162, 53, 42, 0.12);
+    color-scheme: light;
     --shadow: 0 1px 2px rgba(25, 26, 22, .06), 0 8px 24px -12px rgba(25, 26, 22, .18);
 
     --display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
@@ -49,6 +50,7 @@
       --good-soft: rgba(82, 192, 140, 0.14);
       --bad: #E5705F;
       --bad-soft: rgba(229, 112, 95, 0.14);
+      color-scheme: dark;
       --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px -14px rgba(0, 0, 0, .7);
     }
   }
@@ -69,6 +71,7 @@
     --good-soft: rgba(82, 192, 140, 0.14);
     --bad: #E5705F;
     --bad-soft: rgba(229, 112, 95, 0.14);
+    color-scheme: dark;
     --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px -14px rgba(0, 0, 0, .7);
   }
 
@@ -313,7 +316,18 @@
   }
 
   body.is-locked .locked-note { display: flex; }
-  body.is-locked .stake-row input { opacity: .5; }
+  body.is-locked .stake-row input,
+  body.has-bonus .stake-row input { opacity: .5; }
+  body.has-bonus .locked-note { display: none; }
+
+  .bonus-note {
+    display: none;
+    padding: 10px 16px 16px;
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+
+  body.has-bonus .bonus-note { display: block; }
 
   .linkish {
     font: inherit;
@@ -438,6 +452,149 @@
   }
 
   .leg-out b { font-weight: 600; color: var(--ink); }
+
+  /* ---------- Bonus ---------- */
+
+  select {
+    font-family: var(--body);
+    font-size: 15px;
+    color: var(--ink);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 10px 12px;
+    width: 100%;
+    cursor: pointer;
+  }
+
+  select:focus-visible {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+
+  .bonus-row {
+    display: flex;
+    gap: 10px;
+    padding: 16px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .bonus-row .field { flex: 1 1 150px; min-width: 0; }
+  .bonus-row .field.hide { display: none; }
+
+  .mode {
+    display: inline-flex;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 3px;
+    gap: 2px;
+    height: 43px;
+    flex: none;
+  }
+
+  .mode button {
+    font-family: var(--body);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-2);
+    background: transparent;
+    border: 0;
+    border-radius: 7px;
+    padding: 0 12px;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+  }
+
+  .mode button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+  .mode.hide { display: none; }
+
+  .rank {
+    list-style: none;
+    margin: 0;
+    padding: 0 16px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .rank.hide { display: none; }
+
+  .rank .cap {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    padding-bottom: 2px;
+  }
+
+  .rank button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--body);
+    font-size: 14px;
+    color: var(--ink-2);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 9px 12px;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color .15s ease, background .15s ease, color .15s ease;
+  }
+
+  .rank button:hover { border-color: var(--line-strong); color: var(--ink); }
+
+  .rank button.on {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--ink);
+  }
+
+  .rank .nm { flex: 1; font-weight: 600; min-width: 0; }
+
+  .rank .tip {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .rank .vl {
+    font-family: var(--mono);
+    font-size: 13.5px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .leg.bonus .leg-tag .dot { background: var(--accent); }
+
+  .tag-bonus {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .verdict-note {
+    display: none;
+    border-top: 1px solid var(--line);
+    padding: 13px 16px;
+    font-size: 13.5px;
+    color: var(--ink-2);
+  }
+
+  .verdict-note.on { display: block; }
+  .verdict-note b { color: var(--ink); font-weight: 600; }
 
   /* ---------- Ergebnis ---------- */
 
@@ -614,6 +771,8 @@
       <span>Einsatz fixiert — der Gesamteinsatz richtet sich danach.</span>
       <button type="button" class="linkish" id="unlock">Fixierung lösen</button>
     </div>
+
+    <div class="bonus-note">Der Bonus bestimmt die Einsätze — der Gesamteinsatz ergibt sich daraus.</div>
   </section>
 
   <section class="card">
@@ -628,25 +787,62 @@
     <div class="legs" id="legs"></div>
   </section>
 
+  <section class="card" id="bonusCard">
+    <div class="card-head">
+      <span class="card-title">Bonus</span>
+      <span class="card-title" id="bonusTag"></span>
+    </div>
+
+    <div class="bonus-row">
+      <div class="field" style="flex: 1 1 100%;">
+        <label class="lbl" for="bonusType">Art</label>
+        <select id="bonusType">
+          <option value="none">Kein Bonus</option>
+          <option value="boost">Quotenboost</option>
+          <option value="freebet">Gratiswette</option>
+          <option value="riskfree">Risikofreie Wette</option>
+        </select>
+      </div>
+      <div class="field hide" id="fAmount">
+        <label class="lbl" for="bonusAmount" id="lblAmount">Betrag</label>
+        <div class="with-unit">
+          <input class="num" type="text" id="bonusAmount" inputmode="decimal" autocomplete="off">
+          <span class="unit">€</span>
+        </div>
+      </div>
+      <div class="mode hide" id="bonusMode" role="group" aria-label="Art des Quotenboosts">
+        <button type="button" id="modeFactor" aria-pressed="true">mal</button>
+        <button type="button" id="modeAbs" aria-pressed="false">auf</button>
+      </div>
+      <div class="field hide" id="fValue">
+        <label class="lbl" for="bonusValue" id="lblValue">Faktor</label>
+        <input class="num" type="text" id="bonusValue" inputmode="decimal" autocomplete="off">
+      </div>
+    </div>
+
+    <ul class="rank hide" id="rank"></ul>
+  </section>
+
   <section class="verdict idle" id="verdict">
     <div class="verdict-head"><span id="verdictHead">Quoten eintragen</span><span class="edge" id="marginTag"></span></div>
     <div class="verdict-body">
       <div class="stat hero">
-        <span class="k">Sicherer Gewinn</span>
+        <span class="k" id="profitK">Sicherer Gewinn</span>
         <span class="v" id="profitV">–</span>
         <span class="s" id="profitS">bei jedem Ausgang</span>
       </div>
       <div class="stat">
         <span class="k">Rendite</span>
         <span class="v" id="roiV">–</span>
-        <span class="s">auf den Gesamteinsatz</span>
+        <span class="s" id="roiS">auf den Gesamteinsatz</span>
       </div>
       <div class="stat">
-        <span class="k">Gesamteinsatz</span>
+        <span class="k" id="totalK">Gesamteinsatz</span>
         <span class="v" id="totalV">–</span>
         <span class="s" id="totalS">Auszahlung –</span>
       </div>
     </div>
+    <div class="verdict-note" id="verdictNote"></div>
   </section>
 
   <details>
@@ -663,6 +859,14 @@ Gewinn      = T · (1/S − 1)</p>
 Einsatz ᵢ = P / oᵢ
 Gewinn    = P · (1 − S)</p>
       <p>Die Formel gilt für beliebig viele Ausgänge — jeder zusätzliche Weg ist nur ein weiterer Summand in <b>S</b>. Praktisch wird es dabei aber enger statt einfacher: mehr Wege heißt mehr Teilwetten, die alle platziert sein müssen, bevor sich eine Quote bewegt.</p>
+      <h4 style="font-family:var(--body);font-size:14px;margin:16px 0 8px;color:var(--ink)">Boni</h4>
+      <p>Ein Bonus verändert immer nur <b>eine</b> Zeile; die übrigen Ausgänge sichert dieselbe Rechnung ab. Was sich ändert, ist die Auszahlung, die dieser eine Ausgang bringt:</p>
+      <p class="formula">Quotenboost:  P = Höchsteinsatz · geboostete Quote
+Gratiswette:  P = Freebet-Wert · (o − 1)
+Risikofrei:   P = Einsatz · o</p>
+      <p>Bei der <b>Gratiswette</b> steht der Einsatz nicht in deinem Bargeld — nur die Gegenwetten kosten dich etwas, und der Einsatz wird nicht mit ausgezahlt. Deshalb sind hier hohe Quoten deutlich besser: aus einer Freebet auf Quote 1,50 holst du rund ein Drittel des Werts, auf Quote 6,00 über 80 %.</p>
+      <p>Die <b>risikofreie Wette</b> rechnet wie eine gewöhnliche Wette. Das Bargeld-Ergebnis ist in jedem Fall gleich und meist ein kleines Minus — der Wert steckt in der Erstattung, und die kommt nur, wenn der Bonus-Ausgang verliert. Beide Größen werden getrennt ausgewiesen, weil eine Freebet kein Bargeld ist, solange sie nicht umgesetzt wurde.</p>
+      <p>Für die Frage „wohin mit dem Bonus" wird dieselbe Rechnung einmal pro Ausgang durchgespielt. Bei gedeckeltem Einsatz gewinnt meist die hohe Quote, weil die Auszahlung direkt an ihr hängt — ohne Deckel sieht die Rangfolge anders aus, deshalb rechnet das Tool und rät nicht.</p>
       <p>Angezeigt werden auf Cent gerundete Einsätze — der ausgewiesene Gewinn ist der <b>schlechteste</b> Ausgang nach dieser Rundung, also der Betrag, den du in jedem Fall mindestens hast.</p>
     </div>
   </details>
@@ -690,7 +894,8 @@ Gewinn    = P · (1 − S)</p>
     ],
     total: 100,
     lockIndex: null,
-    lockStake: null
+    lockStake: null,
+    bonus: { type: "none", amount: "", mode: "factor", value: "", leg: "auto" }
   };
 
   function tagFor(i, n) {
@@ -709,11 +914,15 @@ Gewinn    = P · (1 − S)</p>
   var verdictEl = document.getElementById("verdict");
   var verdictHeadEl = document.getElementById("verdictHead");
   var marginTagEl = document.getElementById("marginTag");
+  var rankEl = document.getElementById("rank");
+  var noteEl = document.getElementById("verdictNote");
+
+  /* --- Zahlen ------------------------------------------------------- */
 
   function num(v) {
     if (typeof v === "number") return v;
     if (!v) return NaN;
-    var s = String(v).replace(/\s/g, "").replace(",", ".");
+    var s = String(v).replace(/\s/g, "").replace("%", "").replace(",", ".");
     if (s === "") return NaN;
     var f = parseFloat(s);
     return isFinite(f) ? f : NaN;
@@ -725,57 +934,149 @@ Gewinn    = P · (1 − S)</p>
 
   function pct(v) {
     var t = v.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    return t.replace("-", "\u2212") + " %";
+    return t.replace("-", "−") + " %";
+  }
+
+  function signed(v) {
+    return (v >= 0 ? "+" : "−") + money(Math.abs(v)) + " €";
   }
 
   function round2(v) { return Math.round(v * 100) / 100; }
 
-  /* --- Berechnung -------------------------------------------------- */
+  /* --- Rechnung ----------------------------------------------------- */
 
-  function calc() {
-    var n = state.legs.length;
-    var odds = [];
-    for (var i = 0; i < n; i++) odds.push(num(state.legs[i].odds));
+  function oddsList() {
+    var out = [];
+    for (var i = 0; i < state.legs.length; i++) out.push(num(state.legs[i].odds));
+    return out;
+  }
 
-    var complete = odds.every(function (o) { return isFinite(o) && o > 1; });
-    if (!complete) return { ok: false, odds: odds, n: n };
+  function oddsOk(o) {
+    for (var i = 0; i < o.length; i++) if (!(isFinite(o[i]) && o[i] > 1)) return false;
+    return true;
+  }
+
+  function boostOdds(base) {
+    var v = num(state.bonus.value);
+    if (!isFinite(v) || v <= 0) return NaN;
+    return state.bonus.mode === "factor" ? base * v : v;
+  }
+
+  // Bonus auf Ausgang k. Ohne Bonus wird k ignoriert.
+  function calc(k) {
+    var odds = oddsList();
+    var n = odds.length;
+    if (!oddsOk(odds)) return { ok: false };
+
+    var type = state.bonus.type;
+    var i, stakes = [], payoutK, cashK;
+
+    if (type === "none") {
+      var S = 0;
+      for (i = 0; i < n; i++) S += 1 / odds[i];
+      var P;
+      if (state.lockIndex !== null && state.lockIndex < n && isFinite(state.lockStake) && state.lockStake > 0) {
+        P = state.lockStake * odds[state.lockIndex];
+      } else {
+        if (!isFinite(state.total) || state.total <= 0) return { ok: false };
+        P = state.total / S;
+      }
+      for (i = 0; i < n; i++) {
+        stakes.push(i === state.lockIndex ? round2(state.lockStake) : round2(P / odds[i]));
+      }
+      return finish(odds, stakes, stakes.slice(), null, null);
+    }
+
+    var amt = num(state.bonus.amount);
+    if (!isFinite(amt) || amt <= 0) return { ok: false };
+    if (k === null || k < 0 || k >= n) return { ok: false };
+
+    if (type === "boost") {
+      var e = boostOdds(odds[k]);
+      if (!isFinite(e) || e <= 1) return { ok: false };
+      payoutK = amt * e;
+      cashK = amt;
+    } else if (type === "freebet") {
+      payoutK = amt * (odds[k] - 1);
+      cashK = 0;
+    } else {
+      payoutK = amt * odds[k];
+      cashK = amt;
+    }
+
+    var shown = [];
+    for (i = 0; i < n; i++) {
+      if (i === k) {
+        stakes.push(round2(cashK));
+        shown.push(round2(amt));
+      } else {
+        var st = round2(payoutK / odds[i]);
+        stakes.push(st);
+        shown.push(st);
+      }
+    }
+    return finish(odds, stakes, shown, k, payoutK);
+  }
+
+  // stakes = tatsächlich eingesetztes Bargeld, shown = was in den Feldern steht
+  function finish(odds, stakes, shown, k, payoutK) {
+    var n = odds.length, i;
+
+    var cash = 0;
+    for (i = 0; i < n; i++) cash += stakes[i];
+    cash = round2(cash);
+
+    var payouts = [];
+    for (i = 0; i < n; i++) {
+      payouts.push(i === k ? round2(payoutK) : round2(stakes[i] * odds[i]));
+    }
+
+    var minPayout = Math.min.apply(null, payouts);
+    var profit = round2(minPayout - cash);
 
     var S = 0;
-    for (var j = 0; j < n; j++) S += 1 / odds[j];
+    for (i = 0; i < n; i++) S += 1 / odds[i];
 
-    var payoutTarget;
-    if (state.lockIndex !== null && state.lockIndex < n && isFinite(state.lockStake) && state.lockStake > 0) {
-      payoutTarget = state.lockStake * odds[state.lockIndex];
-    } else {
-      var T = state.total;
-      if (!isFinite(T) || T <= 0) return { ok: false, odds: odds, n: n };
-      payoutTarget = T / S;
-    }
-
-    var stakes = [];
-    for (var k = 0; k < n; k++) {
-      var raw = payoutTarget / odds[k];
-      stakes.push(k === state.lockIndex ? round2(state.lockStake) : round2(raw));
-    }
-
-    var total = 0;
-    for (var m = 0; m < n; m++) total += stakes[m];
-    total = round2(total);
-
-    var payouts = stakes.map(function (s, idx) { return round2(s * odds[idx]); });
-    var minPayout = Math.min.apply(null, payouts);
-    var profit = round2(minPayout - total);
+    var amt = num(state.bonus.amount);
+    var type = state.bonus.type;
 
     return {
-      ok: true, n: n, odds: odds, S: S,
-      stakes: stakes, payouts: payouts,
-      total: total, minPayout: minPayout,
-      profit: profit,
-      roi: total > 0 ? (profit / total) * 100 : 0
+      ok: true, n: n, odds: odds,
+      stakes: stakes, shown: shown, payouts: payouts,
+      total: cash, minPayout: minPayout, profit: profit,
+      roi: cash > 0 ? (profit / cash) * 100 : 0,
+      S: S, bonusLeg: k,
+      freebetBack: (k !== null && type === "riskfree" && isFinite(amt)) ? amt : 0,
+      conversion: (k !== null && type === "freebet" && isFinite(amt) && amt > 0) ? (profit / amt) * 100 : null
     };
   }
 
-  /* --- Aufbau der Zeilen ------------------------------------------- */
+  function ranking() {
+    var out = [];
+    for (var k = 0; k < state.legs.length; k++) {
+      var r = calc(k);
+      out.push({ k: k, ok: r.ok, profit: r.ok ? r.profit : -Infinity });
+    }
+    return out;
+  }
+
+  function bestLeg() {
+    var rk = ranking(), best = -1, bv = -Infinity;
+    for (var i = 0; i < rk.length; i++) {
+      if (rk[i].profit > bv) { bv = rk[i].profit; best = i; }
+    }
+    return bv === -Infinity ? 0 : best;
+  }
+
+  function chosenLeg() {
+    if (state.bonus.type === "none") return null;
+    if (state.bonus.leg !== "auto") {
+      return Math.min(state.bonus.leg, state.legs.length - 1);
+    }
+    return bestLeg();
+  }
+
+  /* --- Zeilen ------------------------------------------------------- */
 
   function buildLegs() {
     legsEl.innerHTML = "";
@@ -791,7 +1092,8 @@ Gewinn    = P · (1 − S)</p>
 
     var tag = document.createElement("div");
     tag.className = "leg-tag";
-    tag.innerHTML = '<span class="dot"></span><span>' + tagFor(i, n) + "</span>";
+    tag.innerHTML = '<span class="dot"></span><span>' + tagFor(i, n) + "</span>" +
+                    '<span class="tag-bonus" hidden>Bonus</span>';
     if (n > MIN_LEGS) {
       var rm = document.createElement("button");
       rm.type = "button";
@@ -849,6 +1151,7 @@ Gewinn    = P · (1 − S)</p>
     iStake.autocomplete = "off";
     iStake.setAttribute("aria-label", "Einsatz für Ausgang " + (i + 1));
     iStake.addEventListener("input", function () {
+      if (state.bonus.type !== "none") return;
       var v = num(iStake.value);
       if (isFinite(v) && v > 0) {
         state.lockIndex = i;
@@ -872,11 +1175,12 @@ Gewinn    = P · (1 − S)</p>
     lock.title = "Diesen Einsatz fixieren";
     lock.setAttribute("aria-label", "Einsatz für Ausgang " + (i + 1) + " fixieren");
     lock.addEventListener("click", function () {
+      if (state.bonus.type !== "none") return;
       if (state.lockIndex === i) {
         state.lockIndex = null;
         state.lockStake = null;
       } else {
-        var r = calc();
+        var r = calc(null);
         state.lockIndex = i;
         state.lockStake = r.ok ? r.stakes[i] : null;
       }
@@ -894,39 +1198,126 @@ Gewinn    = P · (1 − S)</p>
     return row;
   }
 
+  /* --- Bonus-Bedienung ---------------------------------------------- */
+
+  var TYPE_LABEL = {
+    boost: "Quotenboost",
+    freebet: "Gratiswette",
+    riskfree: "Risikofreie Wette"
+  };
+
+  function syncBonusFields() {
+    var t = state.bonus.type;
+    var on = t !== "none";
+    document.getElementById("fAmount").classList.toggle("hide", !on);
+    document.getElementById("bonusMode").classList.toggle("hide", t !== "boost");
+    document.getElementById("fValue").classList.toggle("hide", t !== "boost");
+    rankEl.classList.toggle("hide", !on);
+    document.body.classList.toggle("has-bonus", on);
+
+    document.getElementById("lblAmount").textContent =
+      t === "boost" ? "Höchsteinsatz" : t === "freebet" ? "Freebet-Wert" : "Einsatz";
+
+    document.getElementById("bonusAmount").placeholder =
+      t === "boost" ? "25" : t === "freebet" ? "10" : "50";
+
+    document.getElementById("lblValue").textContent =
+      state.bonus.mode === "factor" ? "Faktor" : "Quote";
+    document.getElementById("bonusValue").placeholder =
+      state.bonus.mode === "factor" ? "1,5" : "3,00";
+
+    document.getElementById("modeFactor").setAttribute("aria-pressed", String(state.bonus.mode === "factor"));
+    document.getElementById("modeAbs").setAttribute("aria-pressed", String(state.bonus.mode !== "factor"));
+
+    document.getElementById("bonusTag").textContent = on ? TYPE_LABEL[t] : "";
+  }
+
+  function renderRank(k) {
+    if (state.bonus.type === "none") { rankEl.innerHTML = ""; return; }
+
+    var rk = ranking();
+    var any = false, bv = -Infinity, bi = -1;
+    for (var a = 0; a < rk.length; a++) {
+      if (rk[a].profit > -Infinity) { any = true; }
+      if (rk[a].profit > bv) { bv = rk[a].profit; bi = a; }
+    }
+
+    var html = '<li class="cap">Wohin mit dem Bonus?</li>';
+    if (!any) {
+      html += '<li style="font-size:14px;color:var(--ink-3)">Quoten und Betrag eintragen, dann rechne ich alle Ausgänge durch.</li>';
+      rankEl.innerHTML = html;
+      return;
+    }
+
+    for (var i = 0; i < rk.length; i++) {
+      var sel = i === k;
+      var lab = tagFor(i, state.legs.length);
+      var own = state.legs[i].label.trim();
+      if (own) lab = own;
+      var val = rk[i].profit > -Infinity ? signed(rk[i].profit) : "–";
+      html += '<li><button type="button" data-k="' + i + '" class="' + (sel ? "on" : "") + '">' +
+              '<span class="nm">' + lab.replace(/[<>&]/g, "") + "</span>" +
+              (i === bi ? '<span class="tip">' +
+                (state.bonus.type === "riskfree" ? "wenigster Einsatz" : "bester") + "</span>" : "") +
+              '<span class="vl" style="color:' +
+              (rk[i].profit > 0 ? "var(--good)" : rk[i].profit > -Infinity ? "var(--bad)" : "var(--ink-3)") +
+              '">' + val + "</span></button></li>";
+    }
+    rankEl.innerHTML = html;
+
+    var btns = rankEl.querySelectorAll("button[data-k]");
+    for (var b = 0; b < btns.length; b++) {
+      btns[b].addEventListener("click", function () {
+        var idx = Number(this.dataset.k);
+        state.bonus.leg = (state.bonus.leg === idx) ? "auto" : idx;
+        render();
+      });
+    }
+  }
+
   /* --- Ausgabe ------------------------------------------------------ */
 
   function render(opts) {
     opts = opts || {};
-    var r = calc();
+    var bonusOn = state.bonus.type !== "none";
+    var k = chosenLeg();
+    var r = calc(k);
     var rows = legsEl.querySelectorAll(".leg");
 
-    document.body.classList.toggle("is-locked", state.lockIndex !== null && state.lockStake !== null);
+    document.body.classList.toggle("is-locked", !bonusOn && state.lockIndex !== null && state.lockStake !== null);
 
-    if (state.lockIndex !== null && state.lockStake !== null && r.ok) {
+    if (r.ok && (bonusOn || (state.lockIndex !== null && state.lockStake !== null))) {
       totalEl.value = money(r.total);
     }
 
     for (var i = 0; i < rows.length; i++) {
       var row = rows[i];
-      var isLocked = state.lockIndex === i && state.lockStake !== null;
+      var isBonus = bonusOn && i === k;
+      var isLocked = !bonusOn && state.lockIndex === i && state.lockStake !== null;
+
       row.classList.toggle("locked", isLocked);
+      row.classList.toggle("bonus", isBonus);
+      row.querySelector(".tag-bonus").hidden = !isBonus;
 
       var lockBtn = row.querySelector(".lock");
       lockBtn.innerHTML = isLocked ? LOCK_SHUT : LOCK_OPEN;
-      lockBtn.title = isLocked ? "Fixierung lösen" : "Diesen Einsatz fixieren";
+      lockBtn.hidden = bonusOn;
 
       var stakeInput = row.querySelector(".stake-input");
+      stakeInput.readOnly = bonusOn;
       if (opts.skip !== i) {
-        stakeInput.value = r.ok ? money(r.stakes[i]) : "";
+        stakeInput.value = r.ok ? money(r.shown[i]) : "";
       }
+
+      var capEl = row.querySelector(".stake-cell .cap");
+      capEl.textContent = (isBonus && state.bonus.type === "freebet") ? "Freebet" : "Einsatz";
 
       var pay = row.querySelector(".pay");
       var win = row.querySelector(".win");
       if (r.ok) {
         pay.textContent = money(r.payouts[i]) + " €";
         var w = round2(r.payouts[i] - r.total);
-        win.textContent = (w >= 0 ? "+" : "−") + money(Math.abs(w)) + " €";
+        win.textContent = signed(w);
         win.style.color = w > 0 ? "var(--good)" : (w < 0 ? "var(--bad)" : "var(--ink)");
       } else {
         pay.textContent = "–";
@@ -935,39 +1326,92 @@ Gewinn    = P · (1 − S)</p>
       }
     }
 
+    renderRank(k);
+
+    var profitK = document.getElementById("profitK");
+    var profitV = document.getElementById("profitV");
+    var profitS = document.getElementById("profitS");
+    var roiV = document.getElementById("roiV");
+    var roiS = document.getElementById("roiS");
+    var totalK = document.getElementById("totalK");
+    var totalV = document.getElementById("totalV");
+    var totalS = document.getElementById("totalS");
+
+    totalK.textContent = bonusOn ? "Bareinsatz" : "Gesamteinsatz";
+    profitK.textContent = state.bonus.type === "riskfree" ? "Bar in jedem Fall" : "Sicherer Gewinn";
+    roiS.textContent = bonusOn ? "auf den Bareinsatz" : "auf den Gesamteinsatz";
+
     if (!r.ok) {
       verdictEl.className = "verdict idle";
-      verdictHeadEl.textContent = "Quoten eintragen";
+      verdictHeadEl.textContent = bonusOn ? "Quoten und Bonus eintragen" : "Quoten eintragen";
       marginTagEl.textContent = "";
-      document.getElementById("profitV").textContent = "–";
-      document.getElementById("profitS").textContent = "bei jedem Ausgang";
-      document.getElementById("roiV").textContent = "–";
-      document.getElementById("totalV").textContent = "–";
-      document.getElementById("totalS").textContent = "Auszahlung –";
+      profitV.textContent = "–";
+      profitS.textContent = state.bonus.type === "riskfree" ? "unabhängig vom Ausgang" : "bei jedem Ausgang";
+      roiV.textContent = "–";
+      totalV.textContent = "–";
+      totalS.textContent = "Auszahlung –";
+      noteEl.className = "verdict-note";
+      noteEl.innerHTML = "";
       return;
     }
 
-    var sure = r.profit > 0;
-    verdictEl.className = "verdict " + (sure ? "ok" : "no");
-    verdictHeadEl.textContent = sure
-      ? "Surebet — Gewinn bei jedem Ausgang"
-      : "Keine Surebet — jeder Ausgang endet im Minus";
+    var good = r.profit > 0;
+    verdictEl.className = "verdict " + (good ? "ok" : "no");
+
+    if (state.bonus.type === "riskfree") {
+      verdictHeadEl.textContent = good
+        ? "Bargeld gesichert — plus Freebet, wenn der Bonus verliert"
+        : "Bar im Minus — der Wert steckt in der Freebet";
+      verdictEl.className = "verdict " + (good ? "ok" : "no");
+    } else if (bonusOn) {
+      verdictHeadEl.textContent = good
+        ? "Bonus abgesichert — Gewinn bei jedem Ausgang"
+        : "Gegenquoten zu schlecht — kein sicherer Gewinn";
+    } else {
+      verdictHeadEl.textContent = good
+        ? "Surebet — Gewinn bei jedem Ausgang"
+        : "Keine Surebet — jeder Ausgang endet im Minus";
+    }
 
     var margin = (r.S - 1) * 100;
-    marginTagEl.textContent = margin > 0
-      ? "Marge " + pct(margin)
-      : "Vorteil " + pct(-margin);
+    marginTagEl.textContent = margin > 0 ? "Marge " + pct(margin) : "Vorteil " + pct(-margin);
 
-    document.getElementById("profitV").textContent = (r.profit >= 0 ? "+" : "−") + money(Math.abs(r.profit)) + " €";
-    document.getElementById("profitS").textContent = sure ? "bei jedem Ausgang" : "garantierter Verlust";
-    document.getElementById("roiV").textContent = pct(r.roi);
-    document.getElementById("totalV").textContent = money(r.total) + " €";
-    document.getElementById("totalS").textContent = "Auszahlung " + money(r.minPayout) + " €";
+    profitV.textContent = signed(r.profit);
+    profitS.textContent = state.bonus.type === "riskfree"
+      ? "unabhängig vom Ausgang"
+      : (good ? "bei jedem Ausgang" : "garantierter Verlust");
+
+    roiV.textContent = pct(r.roi);
+    totalV.textContent = money(r.total) + " €";
+    totalS.textContent = "Auszahlung " + money(r.minPayout) + " €";
+
+    if (state.bonus.type === "freebet" && r.conversion !== null) {
+      roiS.textContent = pct(r.conversion) + " vom Freebet-Wert";
+    }
+
+    if (state.bonus.type === "riskfree" && r.freebetBack > 0) {
+      var chance = (1 - 1 / r.odds[k]) * 100;
+      noteEl.className = "verdict-note on";
+      noteEl.innerHTML = "Verliert der Bonus-Ausgang, bekommst du zusätzlich eine <b>Freebet über " +
+        money(r.freebetBack) + " €</b> — bei Quote " + money(r.odds[k]) + " in rund <b>" +
+        pct(chance) + "</b> der Fälle. Die Freebet ist noch kein Bargeld: stell diese Seite danach auf " +
+        "<b>Gratiswette</b>, um sie abzusichern. Ein Ausgang mit höherer Quote kostet mehr Bargeld, " +
+        "liefert die Freebet dafür häufiger — die Liste oben zeigt nur die Bargeldseite.";
+    } else if (state.bonus.type === "freebet" && r.conversion !== null) {
+      noteEl.className = "verdict-note on";
+      noteEl.innerHTML = "Aus einer Freebet über " + money(num(state.bonus.amount)) +
+        " € wird <b>" + money(r.profit) + " € Bargeld</b> — eine Umwandlung von " +
+        pct(r.conversion) + ". Höhere Quoten bringen mehr, solange du sie absichern kannst.";
+    } else {
+      noteEl.className = "verdict-note";
+      noteEl.innerHTML = "";
+    }
   }
 
   /* --- Ereignisse --------------------------------------------------- */
 
   totalEl.addEventListener("input", function () {
+    if (state.bonus.type !== "none") return;
     var v = num(totalEl.value);
     state.total = isFinite(v) ? v : 0;
     state.lockIndex = null;
@@ -977,6 +1421,7 @@ Gewinn    = P · (1 − S)</p>
 
   document.querySelectorAll(".chip").forEach(function (c) {
     c.addEventListener("click", function () {
+      if (state.bonus.type !== "none") return;
       state.total = parseFloat(c.dataset.total);
       state.lockIndex = null;
       state.lockStake = null;
@@ -986,7 +1431,7 @@ Gewinn    = P · (1 − S)</p>
   });
 
   document.getElementById("unlock").addEventListener("click", function () {
-    var r = calc();
+    var r = calc(null);
     if (r.ok) state.total = r.total;
     state.lockIndex = null;
     state.lockStake = null;
@@ -1017,6 +1462,10 @@ Gewinn    = P · (1 − S)</p>
     } else if (state.lockIndex !== null && state.lockIndex > i) {
       state.lockIndex -= 1;
     }
+    if (state.bonus.leg !== "auto") {
+      if (state.bonus.leg === i) state.bonus.leg = "auto";
+      else if (state.bonus.leg > i) state.bonus.leg -= 1;
+    }
     state.legs.splice(i, 1);
     refresh();
   }
@@ -1026,6 +1475,40 @@ Gewinn    = P · (1 − S)</p>
     removeLeg(state.legs.length - 1);
   });
 
+  document.getElementById("bonusType").addEventListener("change", function () {
+    state.bonus.type = this.value;
+    state.bonus.leg = "auto";
+    if (state.bonus.type !== "none") {
+      state.lockIndex = null;
+      state.lockStake = null;
+    }
+    syncBonusFields();
+    render();
+  });
+
+  document.getElementById("bonusAmount").addEventListener("input", function () {
+    state.bonus.amount = this.value;
+    render();
+  });
+
+  document.getElementById("bonusValue").addEventListener("input", function () {
+    state.bonus.value = this.value;
+    render();
+  });
+
+  document.getElementById("modeFactor").addEventListener("click", function () {
+    state.bonus.mode = "factor";
+    syncBonusFields();
+    render();
+  });
+
+  document.getElementById("modeAbs").addEventListener("click", function () {
+    state.bonus.mode = "absolute";
+    syncBonusFields();
+    render();
+  });
+
+  syncBonusFields();
   refresh();
 })();
 </script>
