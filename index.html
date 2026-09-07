@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<meta name="description" content="Arbitrage-Rechner für Sportwetten: Quoten eintragen, Einsätze so verteilen, dass jeder Ausgang dieselbe Auszahlung bringt — inklusive Boni.">
+<meta name="description" content="Arbitrage-Rechner für Sportwetten: Quoten eintragen, Einsätze so verteilen, dass jeder Ausgang dieselbe Auszahlung bringt — mit Boni und Wett-Statistik.">
 <title>Sichere Wette</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 
@@ -453,6 +453,314 @@
 
   .leg-out b { font-weight: 600; color: var(--ink); }
 
+  /* ---------- Menü ---------- */
+
+  .menubar {
+    position: sticky;
+    top: 12px;
+    z-index: 30;
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-start;
+    height: 0;
+    margin: 0;
+  }
+
+  .menu { position: relative; }
+
+  .menu-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font-family: var(--body);
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 9px 13px;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    transition: border-color .15s ease;
+  }
+
+  .menu-btn:hover { border-color: var(--line-strong); }
+  .menu-btn .bars { width: 15px; height: 15px; color: var(--accent); flex: none; }
+  .menu-btn .chev { width: 11px; height: 11px; color: var(--ink-3); flex: none; transition: transform .18s ease; }
+  .menu-btn[aria-expanded="true"] .chev { transform: rotate(180deg); }
+
+  .menu-pop {
+    position: absolute;
+    top: calc(100% + 7px);
+    right: 0;
+    min-width: 210px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    padding: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .menu-pop[hidden] { display: none; }
+
+  .menu-pop button {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-family: var(--body);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink-2);
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    text-align: left;
+    transition: background .15s ease, color .15s ease;
+  }
+
+  .menu-pop button:hover { background: var(--surface-2); color: var(--ink); }
+  .menu-pop button[aria-current="true"] { color: var(--accent); }
+
+  .menu-pop .dot {
+    width: 6px;
+    height: 6px;
+    margin-top: 6px;
+    border-radius: 50%;
+    background: transparent;
+    flex: none;
+  }
+
+  .menu-pop button[aria-current="true"] .dot { background: var(--accent); }
+
+  .menu-pop .sub {
+    display: block;
+    font-weight: 400;
+    font-size: 12px;
+    color: var(--ink-3);
+    margin-top: 1px;
+  }
+
+  .pane { display: flex; flex-direction: column; gap: 22px; }
+  .pane[hidden] { display: none; }
+
+  /* ---------- Speichern ---------- */
+
+  .save-row {
+    display: flex;
+    gap: 10px;
+    padding: 16px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .save-row .field { flex: 1 1 180px; min-width: 0; }
+
+  .btn {
+    font-family: var(--body);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent-ink);
+    background: var(--accent);
+    border: 0;
+    border-radius: 9px;
+    padding: 12px 16px;
+    cursor: pointer;
+    flex: none;
+    transition: opacity .15s ease;
+  }
+
+  .btn:disabled { opacity: .35; cursor: default; }
+  .btn.ghost { background: var(--surface-2); color: var(--ink-2); border: 1px solid var(--line); }
+  .btn.ghost:hover:not(:disabled) { color: var(--ink); border-color: var(--line-strong); }
+
+  .save-hint { padding: 0 16px 16px; font-size: 13px; color: var(--ink-3); }
+
+  /* ---------- Bilanz ---------- */
+
+  .stats4 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+
+  .stats4 .stat { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .stats4 .stat .v { font-size: 23px; }
+
+  .open-note {
+    padding: 13px 16px;
+    font-size: 13.5px;
+    color: var(--ink-2);
+  }
+
+  .open-note b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- Kurve ---------- */
+
+  .chart-wrap { padding: 8px 12px 14px; position: relative; }
+  .chart-wrap svg { display: block; width: 100%; }
+
+  .chart-empty {
+    padding: 22px 16px 26px;
+    font-size: 14px;
+    color: var(--ink-3);
+    text-align: center;
+  }
+
+  .tip-box {
+    position: absolute;
+    pointer-events: none;
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-size: 12.5px;
+    color: var(--ink);
+    box-shadow: var(--shadow);
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity .1s ease;
+    z-index: 3;
+  }
+
+  .tip-box.on { opacity: 1; }
+  .tip-box .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .tip-box .sub { color: var(--ink-3); font-size: 11.5px; }
+
+  /* ---------- Bonus-Bilanz ---------- */
+
+  .split { display: grid; grid-template-columns: 1fr 1fr; }
+
+  .split > div {
+    padding: 16px;
+    border-right: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .split > div:last-child { border-right: 0; }
+
+  .split .k {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  .split .v {
+    font-family: var(--display);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .split .s { font-size: 12px; color: var(--ink-3); }
+
+  /* ---------- Liste ---------- */
+
+  .hist { list-style: none; margin: 0; padding: 0; }
+
+  .hist li {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .hist li:last-child { border-bottom: 0; }
+
+  .hist .top { display: flex; align-items: baseline; gap: 9px; }
+
+  .hist .date {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+    flex: none;
+  }
+
+  .hist .ttl { font-size: 14.5px; font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .hist .kind {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    flex: none;
+  }
+
+  .hist .bot { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+  .hist .fig {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-2);
+  }
+
+  .hist .fig b { font-weight: 600; }
+  .hist .acts { margin-left: auto; display: flex; gap: 6px; flex: none; }
+
+  .mini {
+    font-family: var(--body);
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--ink-2);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    padding: 6px 10px;
+    cursor: pointer;
+    transition: color .15s ease, border-color .15s ease, background .15s ease;
+  }
+
+  .mini:hover { color: var(--ink); border-color: var(--line-strong); }
+  .mini.danger:hover { color: var(--bad); border-color: var(--bad); background: var(--bad-soft); }
+  .mini.go { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
+
+  .settle { display: flex; gap: 8px; align-items: center; }
+  .settle input {
+    width: 110px;
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 14px;
+    padding: 7px 10px;
+  }
+
+  .hist-empty { padding: 26px 16px 30px; text-align: center; font-size: 14px; color: var(--ink-3); }
+
+  /* ---------- Sichern ---------- */
+
+  .expo { padding: 16px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
+  .expo[hidden] { display: none; }
+
+  .expo textarea {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 10px 12px;
+    width: 100%;
+    height: 110px;
+    resize: vertical;
+  }
+
+  .expo textarea:focus-visible { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .expo .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .expo .msg { font-size: 13px; color: var(--ink-2); }
+
   /* ---------- Bonus ---------- */
 
   select {
@@ -740,11 +1048,34 @@
 <body>
 <div class="wrap">
 
+  <div class="menubar">
+    <div class="menu">
+      <button type="button" class="menu-btn" id="menuBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="menuPop">
+        <svg class="bars" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        <span id="menuLabel">Wette</span>
+        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="menu-pop" id="menuPop" role="menu" hidden>
+        <button type="button" role="menuitem" data-go="calc" aria-current="true">
+          <span class="dot"></span>
+          <span>Wette<span class="sub">Einsätze berechnen</span></span>
+        </button>
+        <button type="button" role="menuitem" data-go="hist" aria-current="false">
+          <span class="dot"></span>
+          <span>Statistik<span class="sub">Bilanz, Verlauf und Wetten</span></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <header>
     <div class="eyebrow">Arbitrage-Rechner</div>
     <h1>Sichere Wette</h1>
     <p class="lede">Quoten aller Ausgänge eintragen — zwei bis zehn Wege. Der Rechner verteilt den Einsatz so, dass jeder Ausgang dieselbe Auszahlung bringt.</p>
   </header>
+
+
+  <div class="pane" id="paneCalc">
 
   <section class="card">
     <div class="card-head">
@@ -845,6 +1176,18 @@
     <div class="verdict-note" id="verdictNote"></div>
   </section>
 
+  <section class="card">
+    <div class="card-head"><span class="card-title">In die Historie</span></div>
+    <div class="save-row">
+      <div class="field">
+        <label class="lbl" for="saveTitle">Bezeichnung</label>
+        <input type="text" id="saveTitle" autocomplete="off">
+      </div>
+      <button type="button" class="btn" id="saveBtn" disabled>Wette speichern</button>
+    </div>
+    <div class="save-hint" id="saveHint">Speichert Quoten, Einsätze und den geplanten Gewinn. Das tatsächliche Ergebnis trägst du später in der Historie nach.</div>
+  </section>
+
   <details>
     <summary>Wie gerechnet wird</summary>
     <div class="inner">
@@ -870,6 +1213,89 @@ Risikofrei:   P = Einsatz · o</p>
       <p>Angezeigt werden auf Cent gerundete Einsätze — der ausgewiesene Gewinn ist der <b>schlechteste</b> Ausgang nach dieser Rundung, also der Betrag, den du in jedem Fall mindestens hast.</p>
     </div>
   </details>
+
+  </div>
+
+  <div class="pane" id="paneHist" hidden>
+
+    <section class="card">
+      <div class="card-head">
+        <span class="card-title">Bilanz</span>
+        <span class="card-title" id="histCount"></span>
+      </div>
+      <div class="stats4">
+        <div class="stat hero">
+          <span class="k">Gewinn</span>
+          <span class="v" id="hGain">–</span>
+          <span class="s">tatsächlich, abgerechnet</span>
+        </div>
+        <div class="stat">
+          <span class="k">Wetten</span>
+          <span class="v" id="hCount">–</span>
+          <span class="s" id="hCountS">abgerechnet</span>
+        </div>
+        <div class="stat">
+          <span class="k">Kapital</span>
+          <span class="v" id="hCash">–</span>
+          <span class="s">insgesamt eingesetzt</span>
+        </div>
+        <div class="stat">
+          <span class="k">Rendite</span>
+          <span class="v" id="hRoi">–</span>
+          <span class="s">auf das Kapital</span>
+        </div>
+      </div>
+      <div class="open-note" id="hOpen"></div>
+    </section>
+
+    <section class="card" id="chartCard">
+      <div class="card-head">
+        <span class="card-title">Aufsummierter Gewinn</span>
+        <span class="card-title" id="chartTail"></span>
+      </div>
+      <div class="chart-wrap" id="chartWrap">
+        <svg id="chart" aria-label="Verlauf des aufsummierten Gewinns"></svg>
+        <div class="tip-box" id="chartTip"></div>
+      </div>
+      <div class="chart-empty" id="chartEmpty">Ab zwei abgerechneten Wetten zeichne ich hier den Verlauf.</div>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><span class="card-title">Bonus-Bilanz</span></div>
+      <div class="split">
+        <div>
+          <span class="k">Aus Boni</span>
+          <span class="v" id="bBonus">–</span>
+          <span class="s" id="bBonusS">–</span>
+        </div>
+        <div>
+          <span class="k">Reine Arbitrage</span>
+          <span class="v" id="bPlain">–</span>
+          <span class="s" id="bPlainS">–</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <span class="card-title">Wetten</span>
+        <button type="button" class="linkish" id="expoToggle">Sichern &amp; übertragen</button>
+      </div>
+      <div class="expo" id="expo" hidden>
+        <div class="msg">Der Text unten ist deine komplette Historie. Kopier ihn zum Sichern weg — oder füg hier eine gesicherte Historie ein und übernimm sie.</div>
+        <textarea id="expoText" spellcheck="false" aria-label="Historie als Text"></textarea>
+        <div class="row">
+          <button type="button" class="mini" id="expoCopy">Kopieren</button>
+          <button type="button" class="mini" id="expoSave">Als Datei sichern</button>
+          <button type="button" class="mini" id="expoLoad">Einfügen übernehmen</button>
+          <button type="button" class="mini danger" id="expoClear">Alles löschen</button>
+        </div>
+        <div class="msg" id="expoMsg"></div>
+      </div>
+      <ul class="hist" id="histList"></ul>
+    </section>
+
+  </div>
 
   <footer>
     Der Rechner garantiert die Mathematik, nicht das Ergebnis: Quoten ändern sich zwischen zwei Wetten, Buchmacher stornieren Wetten und limitieren Konten, und eine einzige nicht platzierte Teilwette macht aus der sicheren Wette eine offene. Setze nur Geld ein, dessen Verlust du tragen kannst.
@@ -1327,6 +1753,7 @@ Risikofrei:   P = Einsatz · o</p>
     }
 
     renderRank(k);
+    updateSave();
 
     var profitK = document.getElementById("profitK");
     var profitV = document.getElementById("profitV");
@@ -1507,6 +1934,563 @@ Risikofrei:   P = Einsatz · o</p>
     syncBonusFields();
     render();
   });
+
+
+  /* --- Historie ----------------------------------------------------- */
+
+  var KEY = "sichere-wette.historie.v1";
+  var entries = [];
+  var pendingDelete = null;
+  var settling = null;
+  var downloads = null;
+
+  if (window.claude && typeof window.claude.use === "function") {
+    try {
+      window.claude.use("downloads").then(function (d) { downloads = d; }, function () {});
+    } catch (e) { /* egal */ }
+  }
+
+  function loadEntries() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      var arr = raw ? JSON.parse(raw) : [];
+      entries = Array.isArray(arr) ? arr : [];
+    } catch (e) {
+      entries = [];
+    }
+  }
+
+  function saveEntries() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify(entries));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function dateStr(ts) {
+    var d = new Date(ts);
+    return d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "2-digit" });
+  }
+
+  function autoTitle() {
+    var names = [];
+    for (var i = 0; i < state.legs.length; i++) {
+      var t = state.legs[i].label.trim();
+      if (t) names.push(t);
+    }
+    if (names.length >= 2) return names[0] + " / " + names[1];
+    if (names.length === 1) return names[0];
+    return state.legs.length + "-Weg-Wette";
+  }
+
+  var KIND = { boost: "Boost", freebet: "Freebet", riskfree: "Risikofrei" };
+
+  function currentEntry() {
+    var k = chosenLeg();
+    var r = calc(k);
+    if (!r.ok) return null;
+
+    var legs = [];
+    for (var i = 0; i < state.legs.length; i++) {
+      legs.push({
+        label: state.legs[i].label.trim(),
+        odds: r.odds[i],
+        stake: r.shown[i],
+        bonus: i === k
+      });
+    }
+
+    var amt = num(state.bonus.amount);
+    return {
+      id: "w" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      ts: Date.now(),
+      title: "",
+      legs: legs,
+      bonusType: state.bonus.type,
+      bonusAmount: state.bonus.type === "none" || !isFinite(amt) ? 0 : amt,
+      cash: r.total,
+      planned: r.profit,
+      freebetBack: r.freebetBack || 0,
+      status: "open",
+      actual: null
+    };
+  }
+
+  function updateSave() {
+    var btn = document.getElementById("saveBtn");
+    var r = calc(chosenLeg());
+    btn.disabled = !r.ok;
+    document.getElementById("saveTitle").placeholder = autoTitle();
+  }
+
+  /* --- Kennzahlen --------------------------------------------------- */
+
+  function stats() {
+    var doneGain = 0, doneCash = 0, doneN = 0;
+    var openPlan = 0, openCash = 0, openN = 0;
+    var bonusGain = 0, bonusN = 0, plainGain = 0, plainN = 0;
+
+    for (var i = 0; i < entries.length; i++) {
+      var e = entries[i];
+      if (e.status === "done") {
+        var a = Number(e.actual) || 0;
+        doneGain += a;
+        doneCash += Number(e.cash) || 0;
+        doneN++;
+        if (e.bonusType && e.bonusType !== "none") { bonusGain += a; bonusN++; }
+        else { plainGain += a; plainN++; }
+      } else {
+        openPlan += Number(e.planned) || 0;
+        openCash += Number(e.cash) || 0;
+        openN++;
+      }
+    }
+
+    return {
+      doneGain: round2(doneGain), doneCash: round2(doneCash), doneN: doneN,
+      openPlan: round2(openPlan), openCash: round2(openCash), openN: openN,
+      roi: doneCash > 0 ? (doneGain / doneCash) * 100 : 0,
+      bonusGain: round2(bonusGain), bonusN: bonusN,
+      plainGain: round2(plainGain), plainN: plainN
+    };
+  }
+
+  /* --- Kurve -------------------------------------------------------- */
+
+  function settledSorted() {
+    var out = [];
+    for (var i = 0; i < entries.length; i++) if (entries[i].status === "done") out.push(entries[i]);
+    out.sort(function (a, b) { return a.ts - b.ts; });
+    return out;
+  }
+
+  var chartPts = [];
+
+  function drawChart() {
+    var svg = document.getElementById("chart");
+    var wrap = document.getElementById("chartWrap");
+    var empty = document.getElementById("chartEmpty");
+    var card = document.getElementById("chartCard");
+    var tail = document.getElementById("chartTail");
+    var list = settledSorted();
+
+    if (list.length < 2) {
+      svg.innerHTML = "";
+      svg.setAttribute("height", "0");
+      wrap.hidden = true;
+      empty.hidden = false;
+      tail.textContent = "";
+      chartPts = [];
+      return;
+    }
+
+    wrap.hidden = false;
+    empty.hidden = true;
+
+    var W = Math.max(260, wrap.clientWidth - 24);
+    var H = 158;
+    var padL = 6, padR = 6, padT = 16, padB = 24;
+
+    var cum = 0, vals = [0];
+    for (var i = 0; i < list.length; i++) { cum += Number(list[i].actual) || 0; vals.push(round2(cum)); }
+
+    var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+    if (hi === lo) { hi = lo + 1; }
+    var span = hi - lo;
+    lo -= span * 0.12; hi += span * 0.12;
+
+    function X(idx) { return padL + (idx / (vals.length - 1)) * (W - padL - padR); }
+    function Y(v) { return padT + (1 - (v - lo) / (hi - lo)) * (H - padT - padB); }
+
+    var line = "", area = "";
+    chartPts = [];
+    for (var j = 0; j < vals.length; j++) {
+      var x = X(j), y = Y(vals[j]);
+      line += (j ? " L" : "M") + x.toFixed(1) + " " + y.toFixed(1);
+      chartPts.push({ x: x, y: y, v: vals[j], e: j === 0 ? null : list[j - 1] });
+    }
+    var y0 = Y(0);
+    area = line + " L" + X(vals.length - 1).toFixed(1) + " " + y0.toFixed(1) +
+           " L" + X(0).toFixed(1) + " " + y0.toFixed(1) + " Z";
+
+    var last = chartPts[chartPts.length - 1];
+    var total = vals[vals.length - 1];
+
+    svg.setAttribute("width", W);
+    svg.setAttribute("height", H);
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+    svg.innerHTML =
+      '<defs><linearGradient id="gFill" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0%" stop-color="var(--accent)" stop-opacity="0.22"/>' +
+      '<stop offset="100%" stop-color="var(--accent)" stop-opacity="0.02"/>' +
+      "</linearGradient></defs>" +
+      '<line x1="' + padL + '" y1="' + y0.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + y0.toFixed(1) +
+      '" stroke="var(--line-strong)" stroke-width="1" stroke-dasharray="3 3"/>' +
+      '<path d="' + area + '" fill="url(#gFill)"/>' +
+      '<path d="' + line + '" fill="none" stroke="var(--accent)" stroke-width="2" ' +
+      'stroke-linejoin="round" stroke-linecap="round"/>' +
+      '<circle cx="' + last.x.toFixed(1) + '" cy="' + last.y.toFixed(1) + '" r="4" ' +
+      'fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/>' +
+      '<line id="cross" x1="0" y1="' + padT + '" x2="0" y2="' + (H - padB) +
+      '" stroke="var(--line-strong)" stroke-width="1" opacity="0"/>' +
+      '<circle id="hoverDot" r="4" fill="var(--surface)" stroke="var(--accent)" stroke-width="2" opacity="0"/>' +
+      '<text x="' + padL + '" y="' + (H - 6) + '" fill="var(--ink-3)" font-size="11" ' +
+      'font-family="var(--mono)">' + dateStr(list[0].ts) + "</text>" +
+      '<text x="' + (W - padR) + '" y="' + (H - 6) + '" fill="var(--ink-3)" font-size="11" ' +
+      'text-anchor="end" font-family="var(--mono)">' + dateStr(list[list.length - 1].ts) + "</text>";
+
+    tail.textContent = signed(total);
+  }
+
+  function bindChart() {
+    var wrap = document.getElementById("chartWrap");
+    var svg = document.getElementById("chart");
+    var tip = document.getElementById("chartTip");
+
+    function place(ev) {
+      if (chartPts.length < 2) return;
+      var box = svg.getBoundingClientRect();
+      var px = (ev.touches ? ev.touches[0].clientX : ev.clientX) - box.left;
+      var best = 0, bd = Infinity;
+      for (var i = 0; i < chartPts.length; i++) {
+        var d = Math.abs(chartPts[i].x - px);
+        if (d < bd) { bd = d; best = i; }
+      }
+      var p = chartPts[best];
+      var cross = svg.querySelector("#cross");
+      var dot = svg.querySelector("#hoverDot");
+      if (cross) { cross.setAttribute("x1", p.x); cross.setAttribute("x2", p.x); cross.setAttribute("opacity", "1"); }
+      if (dot) { dot.setAttribute("cx", p.x); dot.setAttribute("cy", p.y); dot.setAttribute("opacity", "1"); }
+
+      tip.innerHTML = p.e
+        ? '<span class="mono">' + signed(p.v) + "</span> gesamt<br>" +
+          '<span class="sub">' + dateStr(p.e.ts) + " · diese Wette " + signed(Number(p.e.actual) || 0) + "</span>"
+        : '<span class="mono">0,00 €</span> Start';
+      tip.classList.add("on");
+
+      var tw = tip.offsetWidth;
+      var left = p.x + 12;
+      if (left + tw > svg.clientWidth) left = p.x - tw - 12;
+      tip.style.left = Math.max(0, left) + "px";
+      tip.style.top = Math.max(0, p.y - 46) + "px";
+    }
+
+    function hide() {
+      tip.classList.remove("on");
+      var cross = svg.querySelector("#cross");
+      var dot = svg.querySelector("#hoverDot");
+      if (cross) cross.setAttribute("opacity", "0");
+      if (dot) dot.setAttribute("opacity", "0");
+    }
+
+    wrap.addEventListener("mousemove", place);
+    wrap.addEventListener("mouseleave", hide);
+    wrap.addEventListener("touchstart", place, { passive: true });
+    wrap.addEventListener("touchmove", place, { passive: true });
+    wrap.addEventListener("touchend", hide);
+  }
+
+  /* --- Liste -------------------------------------------------------- */
+
+  function esc(t) {
+    return String(t).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+
+  function renderHist() {
+    var s = stats();
+
+    document.getElementById("hGain").textContent = s.doneN ? signed(s.doneGain) : "–";
+    document.getElementById("hGain").style.color =
+      !s.doneN ? "" : s.doneGain > 0 ? "var(--good)" : s.doneGain < 0 ? "var(--bad)" : "";
+    document.getElementById("hCount").textContent = s.doneN + s.openN ? String(s.doneN) : "–";
+    document.getElementById("hCountS").textContent = s.openN ? "abgerechnet, " + s.openN + " offen" : "abgerechnet";
+    document.getElementById("hCash").textContent = s.doneN ? money(s.doneCash) + " €" : "–";
+    document.getElementById("hRoi").textContent = s.doneCash > 0 ? pct(s.roi) : "–";
+    document.getElementById("histCount").textContent = entries.length ? entries.length + " Einträge" : "";
+
+    var open = document.getElementById("hOpen");
+    if (s.openN) {
+      open.innerHTML = "<b>" + s.openN + (s.openN === 1 ? " offene Wette</b>" : " offene Wetten</b>") +
+        " mit " + money(s.openCash) + " € gebundenem Kapital und " + signed(s.openPlan) +
+        " geplantem Gewinn. Erst nach dem Abrechnen zählt sie in der Bilanz.";
+      open.style.display = "block";
+    } else {
+      open.style.display = "none";
+    }
+
+    document.getElementById("bBonus").textContent = s.bonusN ? signed(s.bonusGain) : "–";
+    document.getElementById("bBonusS").textContent = s.bonusN
+      ? s.bonusN + (s.bonusN === 1 ? " Wette" : " Wetten") : "noch keine";
+    document.getElementById("bPlain").textContent = s.plainN ? signed(s.plainGain) : "–";
+    document.getElementById("bPlainS").textContent = s.plainN
+      ? s.plainN + (s.plainN === 1 ? " Wette" : " Wetten") : "noch keine";
+
+    var list = document.getElementById("histList");
+    if (!entries.length) {
+      list.innerHTML = '<li class="hist-empty">Noch nichts gespeichert. Rechne eine Wette und leg sie unter \u201eWette\u201c ab.</li>';
+      drawChart();
+      return;
+    }
+
+    var sorted = entries.slice().sort(function (a, b) { return b.ts - a.ts; });
+    var html = "";
+    for (var i = 0; i < sorted.length; i++) {
+      var e = sorted[i];
+      var title = e.title || (e.legs && e.legs.length ? e.legs.length + "-Weg-Wette" : "Wette");
+      var kind = KIND[e.bonusType] || "";
+
+      html += "<li>";
+      html += '<div class="top"><span class="date">' + dateStr(e.ts) + "</span>" +
+              '<span class="ttl">' + esc(title) + "</span>" +
+              (kind ? '<span class="kind">' + kind + "</span>" : "") + "</div>";
+
+      html += '<div class="bot">';
+      html += '<span class="fig">' + money(e.cash) + " € · Soll <b>" + signed(e.planned) + "</b></span>";
+
+      if (e.status === "done") {
+        var col = e.actual > 0 ? "var(--good)" : e.actual < 0 ? "var(--bad)" : "var(--ink)";
+        html += '<span class="fig">Ist <b style="color:' + col + '">' + signed(Number(e.actual) || 0) + "</b></span>";
+      }
+
+      html += '<span class="acts">';
+      if (settling === e.id) {
+        html += '<span class="settle"><input class="num" type="text" inputmode="decimal" id="settleIn" value="' +
+                money(e.planned) + '" aria-label="Tatsächlicher Gewinn"><button type="button" class="mini go" data-ok="' +
+                e.id + '">Übernehmen</button><button type="button" class="mini" data-cancel="1">Zurück</button></span>';
+      } else if (pendingDelete === e.id) {
+        html += '<button type="button" class="mini danger" data-del="' + e.id + '">Wirklich löschen</button>' +
+                '<button type="button" class="mini" data-cancel="1">Behalten</button>';
+      } else {
+        html += '<button type="button" class="mini" data-settle="' + e.id + '">' +
+                (e.status === "done" ? "Ist ändern" : "Abrechnen") + "</button>";
+        html += '<button type="button" class="mini danger" data-ask="' + e.id + '">&times;</button>';
+      }
+      html += "</span></div>";
+
+      if (e.freebetBack > 0) {
+        html += '<div class="fig" style="color:var(--ink-3)">Bei Verlust des Bonus: Freebet über ' +
+                money(e.freebetBack) + " €</div>";
+      }
+      html += "</li>";
+    }
+    list.innerHTML = html;
+
+    list.querySelectorAll("[data-settle]").forEach(function (b) {
+      b.addEventListener("click", function () { settling = this.dataset.settle; pendingDelete = null; renderHist(); focusSettle(); });
+    });
+    list.querySelectorAll("[data-ask]").forEach(function (b) {
+      b.addEventListener("click", function () { pendingDelete = this.dataset.ask; settling = null; renderHist(); });
+    });
+    list.querySelectorAll("[data-cancel]").forEach(function (b) {
+      b.addEventListener("click", function () { settling = null; pendingDelete = null; renderHist(); });
+    });
+    list.querySelectorAll("[data-del]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var id = this.dataset.del;
+        entries = entries.filter(function (x) { return x.id !== id; });
+        pendingDelete = null;
+        saveEntries();
+        renderHist();
+      });
+    });
+    list.querySelectorAll("[data-ok]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var id = this.dataset.ok;
+        var inp = document.getElementById("settleIn");
+        var v = num(inp ? inp.value : "");
+        for (var j = 0; j < entries.length; j++) {
+          if (entries[j].id === id) {
+            entries[j].status = "done";
+            entries[j].actual = isFinite(v) ? round2(v) : entries[j].planned;
+          }
+        }
+        settling = null;
+        saveEntries();
+        renderHist();
+      });
+    });
+
+    drawChart();
+  }
+
+  function focusSettle() {
+    var i = document.getElementById("settleIn");
+    if (i) { i.focus(); i.select(); }
+  }
+
+  /* --- Sichern und übertragen --------------------------------------- */
+
+  function expoMsg(t) { document.getElementById("expoMsg").textContent = t; }
+
+  document.getElementById("expoToggle").addEventListener("click", function () {
+    var box = document.getElementById("expo");
+    box.hidden = !box.hidden;
+    if (!box.hidden) {
+      document.getElementById("expoText").value = JSON.stringify(entries, null, 2);
+      expoMsg("");
+    }
+  });
+
+  document.getElementById("expoCopy").addEventListener("click", function () {
+    var ta = document.getElementById("expoText");
+    ta.select();
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(ta.value);
+      } else {
+        document.execCommand("copy");
+      }
+      expoMsg("Kopiert.");
+    } catch (e) {
+      expoMsg("Kopieren ging nicht — markier den Text und nimm Strg+C.");
+    }
+  });
+
+  document.getElementById("expoSave").addEventListener("click", function () {
+    var text = JSON.stringify(entries, null, 2);
+    var name = "sichere-wette-historie.json";
+    if (downloads) {
+      downloads.save({ filename: name, data: text }).then(function () {
+        expoMsg("Gesichert.");
+      }, function (err) {
+        expoMsg(err && err.code === "declined" ? "Abgebrochen." : "Als Datei ging nicht — nimm den Text oben.");
+      });
+      return;
+    }
+    try {
+      var url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+      var a = document.createElement("a");
+      a.href = url; a.download = name;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+      expoMsg("Wenn kein Download startet, nimm den Text oben.");
+    } catch (e) {
+      expoMsg("Als Datei ging nicht — nimm den Text oben.");
+    }
+  });
+
+  document.getElementById("expoLoad").addEventListener("click", function () {
+    var raw = document.getElementById("expoText").value;
+    var arr;
+    try { arr = JSON.parse(raw); } catch (e) { expoMsg("Das ist kein gültiger Historie-Text."); return; }
+    if (!Array.isArray(arr)) { expoMsg("Das ist kein gültiger Historie-Text."); return; }
+    var clean = [];
+    for (var i = 0; i < arr.length; i++) {
+      var e = arr[i];
+      if (!e || typeof e !== "object") continue;
+      clean.push({
+        id: String(e.id || ("w" + i + Date.now().toString(36))),
+        ts: Number(e.ts) || Date.now(),
+        title: typeof e.title === "string" ? e.title : "",
+        legs: Array.isArray(e.legs) ? e.legs : [],
+        bonusType: typeof e.bonusType === "string" ? e.bonusType : "none",
+        bonusAmount: Number(e.bonusAmount) || 0,
+        cash: Number(e.cash) || 0,
+        planned: Number(e.planned) || 0,
+        freebetBack: Number(e.freebetBack) || 0,
+        status: e.status === "done" ? "done" : "open",
+        actual: e.actual === null || e.actual === undefined ? null : Number(e.actual)
+      });
+    }
+    entries = clean;
+    var ok = saveEntries();
+    renderHist();
+    expoMsg(ok ? clean.length + " Einträge übernommen." : "Übernommen, aber nicht dauerhaft gespeichert — Browserspeicher nicht verfügbar.");
+  });
+
+  document.getElementById("expoClear").addEventListener("click", function () {
+    if (this.dataset.armed) {
+      entries = [];
+      saveEntries();
+      renderHist();
+      document.getElementById("expoText").value = "[]";
+      this.textContent = "Alles löschen";
+      delete this.dataset.armed;
+      expoMsg("Historie geleert.");
+    } else {
+      this.dataset.armed = "1";
+      this.textContent = "Wirklich alles löschen";
+      expoMsg("Noch einmal klicken — das lässt sich nicht rückgängig machen.");
+    }
+  });
+
+  /* --- Speichern ---------------------------------------------------- */
+
+  document.getElementById("saveBtn").addEventListener("click", function () {
+    var e = currentEntry();
+    if (!e) return;
+    var t = document.getElementById("saveTitle").value.trim();
+    e.title = t || autoTitle();
+    entries.push(e);
+    var ok = saveEntries();
+    document.getElementById("saveTitle").value = "";
+    document.getElementById("saveHint").textContent = ok
+      ? "\u201e" + e.title + "\u201c liegt jetzt in der Historie \u2014 als offene Wette."
+      : "Gespeichert, aber nur für diese Sitzung: der Browserspeicher ist hier nicht verfügbar.";
+    renderHist();
+  });
+
+  /* --- Reiter ------------------------------------------------------- */
+
+  var menuBtn = document.getElementById("menuBtn");
+  var menuPop = document.getElementById("menuPop");
+
+  function openMenu(on) {
+    menuPop.hidden = !on;
+    menuBtn.setAttribute("aria-expanded", String(on));
+  }
+
+  function showTab(which) {
+    var calcOn = which === "calc";
+    document.getElementById("paneCalc").hidden = !calcOn;
+    document.getElementById("paneHist").hidden = calcOn;
+    document.getElementById("menuLabel").textContent = calcOn ? "Wette" : "Statistik";
+
+    var items = menuPop.querySelectorAll("[data-go]");
+    for (var i = 0; i < items.length; i++) {
+      items[i].setAttribute("aria-current", String(items[i].dataset.go === which));
+    }
+
+    try { localStorage.setItem("sichere-wette.tab", which); } catch (e) { /* egal */ }
+    if (!calcOn) { renderHist(); }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  menuBtn.addEventListener("click", function (ev) {
+    ev.stopPropagation();
+    openMenu(menuPop.hidden);
+  });
+
+  menuPop.querySelectorAll("[data-go]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      openMenu(false);
+      showTab(this.dataset.go);
+      menuBtn.focus();
+    });
+  });
+
+  document.addEventListener("click", function (ev) {
+    if (!menuPop.hidden && !menuPop.contains(ev.target) && ev.target !== menuBtn) openMenu(false);
+  });
+
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key === "Escape" && !menuPop.hidden) { openMenu(false); menuBtn.focus(); }
+  });
+
+  window.addEventListener("resize", function () {
+    if (!document.getElementById("paneHist").hidden) drawChart();
+  });
+
+  loadEntries();
+  bindChart();
+  renderHist();
+  try {
+    if (localStorage.getItem("sichere-wette.tab") === "hist") showTab("hist");
+  } catch (e) { /* egal */ }
 
   syncBonusFields();
   refresh();
