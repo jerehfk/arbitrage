@@ -105,6 +105,12 @@ geplantem Gewinn ausgewiesen.
 Die Bonus-Bilanz trennt, was aus Gratiswetten und Boosts kam, von dem, was
 reine Arbitrage eingebracht hat.
 
+Alte Wetten lassen sich **nachtragen**, ohne den Umweg über den Rechner: in der
+Wetten-Karte auf *Nachtragen* klicken und Datum, Bezeichnung, Einsatz und
+Gewinn eintragen. Verluste bekommen ein Minus, die Bonus-Art hält die
+Bonus-Bilanz sauber, und über *Abgerechnet / Offen* entscheidest du, ob der
+Eintrag schon in die Bilanz zählt.
+
 Das **Datum** ist an zwei Stellen änderbar: im Speichern-Formular (steht auf
 heute) und nachträglich per Klick auf das Datum in der Liste. So lassen sich
 alte Wetten nachtragen. Beim Ändern bleibt die Uhrzeit erhalten, damit zwei

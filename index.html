@@ -750,6 +750,54 @@
 
   .hist-empty { padding: 26px 16px 30px; text-align: center; font-size: 14px; color: var(--ink-3); }
 
+  /* ---------- Nachtragen ---------- */
+
+  .head-actions { display: flex; gap: 14px; align-items: center; }
+
+  .add-box {
+    padding: 16px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .add-box[hidden] { display: none; }
+
+  .add-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .add-row .field { flex: 1 1 132px; min-width: 0; }
+  .add-row .field.wide { flex: 2 1 210px; }
+
+  .seg2 {
+    display: inline-flex;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 3px;
+    gap: 2px;
+    flex: none;
+  }
+
+  .seg2 button {
+    font-family: var(--body);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-2);
+    background: transparent;
+    border: 0;
+    border-radius: 7px;
+    padding: 8px 13px;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+  }
+
+  .seg2 button:hover { color: var(--ink); }
+  .seg2 button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+
+  .add-foot { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .add-foot .btn { padding: 10px 15px; }
+  .add-msg { font-size: 13px; color: var(--ink-2); flex: 1 1 190px; min-width: 0; }
+
   /* ---------- Sichern ---------- */
 
   .expo { padding: 16px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
@@ -1294,7 +1342,56 @@ Risikofrei:   P = Einsatz · o</p>
     <section class="card">
       <div class="card-head">
         <span class="card-title">Wetten</span>
-        <button type="button" class="linkish" id="expoToggle">Sichern &amp; übertragen</button>
+        <span class="head-actions">
+          <button type="button" class="linkish" id="addToggle">Nachtragen</button>
+          <button type="button" class="linkish" id="expoToggle">Sichern</button>
+        </span>
+      </div>
+
+      <div class="add-box" id="addBox" hidden>
+        <div class="add-row">
+          <div class="field" style="flex: 0 0 152px">
+            <label class="lbl" for="addDate">Datum</label>
+            <input class="num" type="date" id="addDate">
+          </div>
+          <div class="field wide">
+            <label class="lbl" for="addTitle">Bezeichnung</label>
+            <input type="text" id="addTitle" placeholder="z. B. Bet365 / Bwin — Bayern" autocomplete="off">
+          </div>
+        </div>
+        <div class="add-row">
+          <div class="field">
+            <label class="lbl" for="addCash">Einsatz</label>
+            <div class="with-unit">
+              <input class="num" type="text" id="addCash" inputmode="decimal" placeholder="100" autocomplete="off">
+              <span class="unit">€</span>
+            </div>
+          </div>
+          <div class="field">
+            <label class="lbl" for="addGain">Gewinn</label>
+            <div class="with-unit">
+              <input class="num" type="text" id="addGain" inputmode="decimal" placeholder="5,79" autocomplete="off">
+              <span class="unit">€</span>
+            </div>
+          </div>
+          <div class="field">
+            <label class="lbl" for="addKind">Bonus</label>
+            <select id="addKind">
+              <option value="none">Kein Bonus</option>
+              <option value="boost">Quotenboost</option>
+              <option value="freebet">Gratiswette</option>
+              <option value="riskfree">Risikofreie Wette</option>
+            </select>
+          </div>
+        </div>
+        <div class="add-foot">
+          <div class="seg2" role="group" aria-label="Status der Wette">
+            <button type="button" id="addDone" aria-pressed="true">Abgerechnet</button>
+            <button type="button" id="addOpen" aria-pressed="false">Offen</button>
+          </div>
+          <button type="button" class="btn" id="addBtn">Eintragen</button>
+          <span class="add-msg" id="addMsg">Verluste mit Minus eintragen, z. B. −3,20.</span>
+        </div>
       </div>
       <div class="expo" id="expo" hidden>
         <div class="msg">Der Text unten ist deine komplette Historie. Kopier ihn zum Sichern weg — oder füg hier eine gesicherte Historie ein und übernimm sie.</div>
@@ -1363,7 +1460,8 @@ Risikofrei:   P = Einsatz · o</p>
   function num(v) {
     if (typeof v === "number") return v;
     if (!v) return NaN;
-    var s = String(v).replace(/\s/g, "").replace("%", "").replace(",", ".");
+    var s = String(v).replace(/\s/g, "").replace("%", "")
+      .replace(/[\u2212\u2013\u2014]/g, "-").replace(",", ".");
     if (s === "") return NaN;
     var f = parseFloat(s);
     return isFinite(f) ? f : NaN;
@@ -2393,6 +2491,76 @@ Risikofrei:   P = Einsatz · o</p>
     if (i) { i.focus(); i.select(); }
   }
 
+  /* --- Nachtragen ---------------------------------------------------- */
+
+  var addStatus = "done";
+
+  function addMsg(t) { document.getElementById("addMsg").textContent = t; }
+
+  function setAddStatus(v) {
+    addStatus = v;
+    document.getElementById("addDone").setAttribute("aria-pressed", String(v === "done"));
+    document.getElementById("addOpen").setAttribute("aria-pressed", String(v === "open"));
+    addMsg(v === "done"
+      ? "Verluste mit Minus eintragen, z. B. \u22123,20."
+      : "Offene Wetten z\u00e4hlen erst nach dem Abrechnen in die Bilanz.");
+  }
+
+  document.getElementById("addDone").addEventListener("click", function () { setAddStatus("done"); });
+  document.getElementById("addOpen").addEventListener("click", function () { setAddStatus("open"); });
+
+  document.getElementById("addToggle").addEventListener("click", function () {
+    var box = document.getElementById("addBox");
+    box.hidden = !box.hidden;
+    if (!box.hidden) {
+      document.getElementById("expo").hidden = true;
+      if (!document.getElementById("addDate").value) {
+        document.getElementById("addDate").value = toDateInput(Date.now());
+      }
+      document.getElementById("addTitle").focus();
+    }
+  });
+
+  document.getElementById("addBtn").addEventListener("click", function () {
+    var ts = fromDateInput(document.getElementById("addDate").value, Date.now());
+    if (ts === null) { addMsg("Das Datum fehlt."); return; }
+
+    var cash = num(document.getElementById("addCash").value);
+    if (!isFinite(cash) || cash < 0) { addMsg("Der Einsatz fehlt oder ist keine Zahl."); return; }
+
+    var gain = num(document.getElementById("addGain").value);
+    if (!isFinite(gain)) { addMsg("Der Gewinn fehlt oder ist keine Zahl \u2014 Verluste mit Minus."); return; }
+
+    var title = document.getElementById("addTitle").value.trim() || "Nachgetragen";
+    var kind = document.getElementById("addKind").value;
+
+    entries.push({
+      id: "w" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      ts: ts,
+      title: title,
+      legs: [],
+      bonusType: kind,
+      bonusAmount: 0,
+      cash: round2(cash),
+      planned: round2(gain),
+      freebetBack: 0,
+      status: addStatus,
+      actual: addStatus === "done" ? round2(gain) : null
+    });
+
+    var ok = saveEntries();
+    renderHist();
+
+    document.getElementById("addTitle").value = "";
+    document.getElementById("addCash").value = "";
+    document.getElementById("addGain").value = "";
+    document.getElementById("addTitle").focus();
+
+    addMsg(ok
+      ? "\u201e" + title + "\u201c vom " + dateStr(ts) + " eingetragen."
+      : "Eingetragen, aber nicht dauerhaft gespeichert \u2014 Browserspeicher nicht verf\u00fcgbar.");
+  });
+
   /* --- Sichern und übertragen --------------------------------------- */
 
   function expoMsg(t) { document.getElementById("expoMsg").textContent = t; }
@@ -2401,6 +2569,7 @@ Risikofrei:   P = Einsatz · o</p>
     var box = document.getElementById("expo");
     box.hidden = !box.hidden;
     if (!box.hidden) {
+      document.getElementById("addBox").hidden = true;
       document.getElementById("expoText").value = JSON.stringify(entries, null, 2);
       expoMsg("");
     }
@@ -2574,6 +2743,8 @@ Risikofrei:   P = Einsatz · o</p>
 
   saveDateEl.addEventListener("change", noteDate);
   saveDateEl.addEventListener("input", noteDate);
+
+  document.getElementById("addDate").value = toDateInput(Date.now());
 
   loadEntries();
   bindChart();
