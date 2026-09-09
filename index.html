@@ -1394,12 +1394,15 @@ Risikofrei:   P = Einsatz · o</p>
         </div>
       </div>
       <div class="expo" id="expo" hidden>
-        <div class="msg">Der Text unten ist deine komplette Historie. Kopier ihn zum Sichern weg — oder füg hier eine gesicherte Historie ein und übernimm sie.</div>
+        <div class="msg">Der Text unten ist deine komplette Historie. Kopier ihn zum Sichern weg — oder füg hier eine gesicherte Historie ein. <b>Hinzufügen</b> ergänzt deine Liste und überspringt, was schon drin ist. <b>Ersetzen</b> wirft die bisherige Historie weg.</div>
         <textarea id="expoText" spellcheck="false" aria-label="Historie als Text"></textarea>
         <div class="row">
           <button type="button" class="mini" id="expoCopy">Kopieren</button>
           <button type="button" class="mini" id="expoSave">Als Datei sichern</button>
-          <button type="button" class="mini" id="expoLoad">Einfügen übernehmen</button>
+        </div>
+        <div class="row">
+          <button type="button" class="mini go" id="expoAdd">Hinzufügen</button>
+          <button type="button" class="mini" id="expoReplace">Ersetzen</button>
           <button type="button" class="mini danger" id="expoClear">Alles löschen</button>
         </div>
         <div class="msg" id="expoMsg"></div>
@@ -2613,17 +2616,19 @@ Risikofrei:   P = Einsatz · o</p>
     }
   });
 
-  document.getElementById("expoLoad").addEventListener("click", function () {
+  // Liest den Text im Feld und gibt saubere Einträge zurück, oder null.
+  function parseImport() {
     var raw = document.getElementById("expoText").value;
     var arr;
-    try { arr = JSON.parse(raw); } catch (e) { expoMsg("Das ist kein gültiger Historie-Text."); return; }
-    if (!Array.isArray(arr)) { expoMsg("Das ist kein gültiger Historie-Text."); return; }
+    try { arr = JSON.parse(raw); } catch (e) { expoMsg("Das ist kein gültiger Historie-Text."); return null; }
+    if (!Array.isArray(arr)) { expoMsg("Das ist kein gültiger Historie-Text."); return null; }
+
     var clean = [];
     for (var i = 0; i < arr.length; i++) {
       var e = arr[i];
       if (!e || typeof e !== "object") continue;
       clean.push({
-        id: String(e.id || ("w" + i + Date.now().toString(36))),
+        id: String(e.id || ("w" + i + Date.now().toString(36) + Math.random().toString(36).slice(2, 6))),
         ts: Number(e.ts) || Date.now(),
         title: typeof e.title === "string" ? e.title : "",
         legs: Array.isArray(e.legs) ? e.legs : [],
@@ -2636,13 +2641,76 @@ Risikofrei:   P = Einsatz · o</p>
         actual: e.actual === null || e.actual === undefined ? null : Number(e.actual)
       });
     }
+    return clean;
+  }
+
+  function afterImport(ok, msg) {
+    renderHist();
+    document.getElementById("expoText").value = JSON.stringify(entries, null, 2);
+    expoMsg(ok ? msg : "Übernommen, aber nicht dauerhaft gespeichert — Browserspeicher nicht verfügbar.");
+  }
+
+  function disarm() {
+    var c = document.getElementById("expoClear");
+    var r = document.getElementById("expoReplace");
+    c.textContent = "Alles löschen"; delete c.dataset.armed;
+    r.textContent = "Ersetzen"; delete r.dataset.armed;
+  }
+
+  document.getElementById("expoAdd").addEventListener("click", function () {
+    disarm();
+    var clean = parseImport();
+    if (!clean) return;
+
+    var seen = {};
+    for (var i = 0; i < entries.length; i++) seen[entries[i].id] = true;
+
+    var added = 0, skipped = 0;
+    for (var j = 0; j < clean.length; j++) {
+      if (seen[clean[j].id]) { skipped++; continue; }
+      seen[clean[j].id] = true;
+      entries.push(clean[j]);
+      added++;
+    }
+
+    if (!added) {
+      afterImport(true, skipped
+        ? "Nichts hinzugefügt — alle " + skipped + " Einträge sind schon in der Liste."
+        : "Der Text enthält keine Einträge.");
+      return;
+    }
+
+    var ok = saveEntries();
+    afterImport(ok, added + (added === 1 ? " Eintrag hinzugefügt" : " Einträge hinzugefügt") +
+      (skipped ? ", " + skipped + " waren schon da." : ".") + " Deine bisherigen bleiben erhalten.");
+  });
+
+  document.getElementById("expoReplace").addEventListener("click", function () {
+    var c = document.getElementById("expoClear");
+    c.textContent = "Alles löschen"; delete c.dataset.armed;
+
+    if (!this.dataset.armed) {
+      this.dataset.armed = "1";
+      this.textContent = "Wirklich ersetzen";
+      expoMsg("Das wirft deine bisherige Historie weg. Noch einmal klicken zum Bestätigen — oder „Hinzufügen“ nehmen.");
+      return;
+    }
+
+    var clean = parseImport();
+    this.textContent = "Ersetzen";
+    delete this.dataset.armed;
+    if (!clean) return;
+
     entries = clean;
     var ok = saveEntries();
-    renderHist();
-    expoMsg(ok ? clean.length + " Einträge übernommen." : "Übernommen, aber nicht dauerhaft gespeichert — Browserspeicher nicht verfügbar.");
+    afterImport(ok, "Historie ersetzt: " + clean.length +
+      (clean.length === 1 ? " Eintrag." : " Einträge."));
   });
 
   document.getElementById("expoClear").addEventListener("click", function () {
+    var rp = document.getElementById("expoReplace");
+    rp.textContent = "Ersetzen"; delete rp.dataset.armed;
+
     if (this.dataset.armed) {
       entries = [];
       saveEntries();

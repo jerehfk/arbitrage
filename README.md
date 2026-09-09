@@ -118,7 +118,12 @@ Wetten vom selben Tag ihre Reihenfolge behalten; Liste und Kurve sortieren sich
 danach neu.
 
 Der Speicher ist an Browser und Gerät gebunden: PC und Handy führen getrennte
-Historien, und gelöschte Browserdaten nehmen sie mit. Deshalb der Export.
+Historien, und gelöschte Browserdaten nehmen sie mit. Deshalb der Export unter
+*Sichern*: der Text dort ist die komplette Historie zum Wegkopieren. Beim
+Einlesen gibt es zwei Wege — **Hinzufügen** ergänzt die vorhandene Liste und
+überspringt, was schon drin ist (an der Eintrags-Kennung erkannt, ein erneuter
+Import derselben Sicherung ändert also nichts); **Ersetzen** wirft den
+bisherigen Stand weg und braucht deshalb zwei Klicks.
 
 ## Aufbau
 
