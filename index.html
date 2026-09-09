@@ -229,7 +229,8 @@
     color: var(--ink-2);
   }
 
-  input[type="text"] {
+  input[type="text"],
+  input[type="date"] {
     font-family: var(--body);
     font-size: 15px;
     color: var(--ink);
@@ -677,15 +678,23 @@
 
   .hist li:last-child { border-bottom: 0; }
 
-  .hist .top { display: flex; align-items: baseline; gap: 9px; }
+  .hist .top { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
 
-  .hist .date {
+  .hist button.date {
     font-family: var(--mono);
     font-size: 11.5px;
     color: var(--ink-3);
     font-variant-numeric: tabular-nums;
     flex: none;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px dashed var(--line-strong);
+    padding: 0 0 1px;
+    cursor: pointer;
+    transition: color .15s ease, border-color .15s ease;
   }
+
+  .hist button.date:hover { color: var(--accent); border-bottom-color: var(--accent); }
 
   .hist .ttl { font-size: 14.5px; font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -729,6 +738,8 @@
   .mini.go { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
 
   .settle { display: flex; gap: 8px; align-items: center; }
+  .settle input[type="date"] { width: 152px; }
+
   .settle input {
     width: 110px;
     font-family: var(--mono);
@@ -1177,8 +1188,12 @@
   </section>
 
   <section class="card">
-    <div class="card-head"><span class="card-title">In die Historie</span></div>
+    <div class="card-head"><span class="card-title">In die Statistik</span></div>
     <div class="save-row">
+      <div class="field" style="flex: 0 0 152px">
+        <label class="lbl" for="saveDate">Datum</label>
+        <input class="num" type="date" id="saveDate">
+      </div>
       <div class="field">
         <label class="lbl" for="saveTitle">Bezeichnung</label>
         <input type="text" id="saveTitle" autocomplete="off">
@@ -1942,6 +1957,7 @@ Risikofrei:   P = Einsatz · o</p>
   var entries = [];
   var pendingDelete = null;
   var settling = null;
+  var editingDate = null;
   var downloads = null;
 
   if (window.claude && typeof window.claude.use === "function") {
@@ -1967,6 +1983,26 @@ Risikofrei:   P = Einsatz · o</p>
     } catch (e) {
       return false;
     }
+  }
+
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+
+  function toDateInput(ts) {
+    var d = new Date(ts);
+    return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+  }
+
+  // Tag aus dem Feld, Uhrzeit aus dem bisherigen Zeitstempel - damit zwei
+  // Wetten am selben Tag ihre Reihenfolge behalten.
+  function fromDateInput(str, keepTs) {
+    var parts = String(str || "").split("-");
+    if (parts.length !== 3) return null;
+    var y = Number(parts[0]), mo = Number(parts[1]) - 1, da = Number(parts[2]);
+    if (!isFinite(y) || !isFinite(mo) || !isFinite(da) || y < 1970 || y > 2200) return null;
+    var b = new Date(keepTs || Date.now());
+    var d = new Date(y, mo, da, b.getHours(), b.getMinutes(), b.getSeconds(), b.getMilliseconds());
+    var t = d.getTime();
+    return isFinite(t) ? t : null;
   }
 
   function dateStr(ts) {
@@ -2244,9 +2280,19 @@ Risikofrei:   P = Einsatz · o</p>
       var kind = KIND[e.bonusType] || "";
 
       html += "<li>";
-      html += '<div class="top"><span class="date">' + dateStr(e.ts) + "</span>" +
-              '<span class="ttl">' + esc(title) + "</span>" +
-              (kind ? '<span class="kind">' + kind + "</span>" : "") + "</div>";
+      if (editingDate === e.id) {
+        html += '<div class="top"><span class="settle">' +
+                '<input type="date" id="dateIn" value="' + toDateInput(e.ts) + '" aria-label="Datum der Wette">' +
+                '<button type="button" class="mini go" data-dateok="' + e.id + '">Übernehmen</button>' +
+                '<button type="button" class="mini" data-cancel="1">Zurück</button></span>' +
+                '<span class="ttl">' + esc(title) + "</span></div>";
+      } else {
+        html += '<div class="top">' +
+                '<button type="button" class="date" data-dateedit="' + e.id + '" title="Datum ändern">' +
+                dateStr(e.ts) + "</button>" +
+                '<span class="ttl">' + esc(title) + "</span>" +
+                (kind ? '<span class="kind">' + kind + "</span>" : "") + "</div>";
+      }
 
       html += '<div class="bot">';
       html += '<span class="fig">' + money(e.cash) + " € · Soll <b>" + signed(e.planned) + "</b></span>";
@@ -2280,13 +2326,38 @@ Risikofrei:   P = Einsatz · o</p>
     list.innerHTML = html;
 
     list.querySelectorAll("[data-settle]").forEach(function (b) {
-      b.addEventListener("click", function () { settling = this.dataset.settle; pendingDelete = null; renderHist(); focusSettle(); });
+      b.addEventListener("click", function () { settling = this.dataset.settle; pendingDelete = null; editingDate = null; renderHist(); focusSettle(); });
     });
     list.querySelectorAll("[data-ask]").forEach(function (b) {
-      b.addEventListener("click", function () { pendingDelete = this.dataset.ask; settling = null; renderHist(); });
+      b.addEventListener("click", function () { pendingDelete = this.dataset.ask; settling = null; editingDate = null; renderHist(); });
     });
     list.querySelectorAll("[data-cancel]").forEach(function (b) {
-      b.addEventListener("click", function () { settling = null; pendingDelete = null; renderHist(); });
+      b.addEventListener("click", function () { settling = null; pendingDelete = null; editingDate = null; renderHist(); });
+    });
+    list.querySelectorAll("[data-dateedit]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        editingDate = this.dataset.dateedit;
+        settling = null;
+        pendingDelete = null;
+        renderHist();
+        var i = document.getElementById("dateIn");
+        if (i) i.focus();
+      });
+    });
+    list.querySelectorAll("[data-dateok]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var id = this.dataset.dateok;
+        var inp = document.getElementById("dateIn");
+        for (var j = 0; j < entries.length; j++) {
+          if (entries[j].id === id) {
+            var t = fromDateInput(inp ? inp.value : "", entries[j].ts);
+            if (t !== null) entries[j].ts = t;
+          }
+        }
+        editingDate = null;
+        saveEntries();
+        renderHist();
+      });
     });
     list.querySelectorAll("[data-del]").forEach(function (b) {
       b.addEventListener("click", function () {
@@ -2425,11 +2496,13 @@ Risikofrei:   P = Einsatz · o</p>
     if (!e) return;
     var t = document.getElementById("saveTitle").value.trim();
     e.title = t || autoTitle();
+    var picked = fromDateInput(document.getElementById("saveDate").value, Date.now());
+    if (picked !== null) e.ts = picked;
     entries.push(e);
     var ok = saveEntries();
     document.getElementById("saveTitle").value = "";
     document.getElementById("saveHint").textContent = ok
-      ? "\u201e" + e.title + "\u201c liegt jetzt in der Historie \u2014 als offene Wette."
+      ? "\u201e" + e.title + "\u201c liegt jetzt unter Statistik \u2014 als offene Wette vom " + dateStr(e.ts) + "."
       : "Gespeichert, aber nur für diese Sitzung: der Browserspeicher ist hier nicht verfügbar.";
     renderHist();
   });
@@ -2484,6 +2557,23 @@ Risikofrei:   P = Einsatz · o</p>
   window.addEventListener("resize", function () {
     if (!document.getElementById("paneHist").hidden) drawChart();
   });
+
+  var DEFAULT_HINT = document.getElementById("saveHint").textContent;
+  var saveDateEl = document.getElementById("saveDate");
+  saveDateEl.value = toDateInput(Date.now());
+
+  function noteDate() {
+    var today = toDateInput(Date.now());
+    var t = fromDateInput(saveDateEl.value, Date.now());
+    document.getElementById("saveHint").textContent =
+      (saveDateEl.value && saveDateEl.value !== today && t !== null)
+        ? "Datum steht auf " + dateStr(t) + " \u2014 gespeicherte Wetten bekommen diesen Tag. " +
+          "F\u00fcr heute das Feld zur\u00fcckstellen."
+        : DEFAULT_HINT;
+  }
+
+  saveDateEl.addEventListener("change", noteDate);
+  saveDateEl.addEventListener("input", noteDate);
 
   loadEntries();
   bindChart();

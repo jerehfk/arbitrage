@@ -105,6 +105,12 @@ geplantem Gewinn ausgewiesen.
 Die Bonus-Bilanz trennt, was aus Gratiswetten und Boosts kam, von dem, was
 reine Arbitrage eingebracht hat.
 
+Das **Datum** ist an zwei Stellen änderbar: im Speichern-Formular (steht auf
+heute) und nachträglich per Klick auf das Datum in der Liste. So lassen sich
+alte Wetten nachtragen. Beim Ändern bleibt die Uhrzeit erhalten, damit zwei
+Wetten vom selben Tag ihre Reihenfolge behalten; Liste und Kurve sortieren sich
+danach neu.
+
 Der Speicher ist an Browser und Gerät gebunden: PC und Handy führen getrennte
 Historien, und gelöschte Browserdaten nehmen sie mit. Deshalb der Export.
 
