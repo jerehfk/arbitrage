@@ -1,13 +1,23 @@
 import { optimize, type Leg, type Plan, type Settings } from '../core/optimizer';
+import type { BetType, RefundKind } from '../core/payout';
 import { parseNumber } from './format';
 
 export interface BetInput {
   provider: string;
+  type: BetType;
   odds: string;
   /** Leer: der Rechner bestimmt den Einsatz. */
   stake: string;
   /** Index des Ausgangs, bei dem die Wette gewinnt. */
   covers: number;
+  /** Wettsteuer auf den Gewinn dieser Wette abziehen. */
+  tax: boolean;
+  /** Nur bei risikofrei: Erstattung als Bargeld oder Gratiswette. */
+  refundKind: RefundKind;
+  /** Nur bei risikofrei: Höchstbetrag der Erstattung, leer = voller Einsatz. */
+  refundCap: string;
+  /** Nur bei Quotenboost: Einsatzlimit, leer = unbegrenzt. */
+  maxStake: string;
 }
 
 export interface UiState {
@@ -18,6 +28,8 @@ export interface UiState {
 export interface BetErrors {
   odds?: string;
   stake?: string;
+  refundCap?: string;
+  maxStake?: string;
 }
 
 export interface Calculation {
@@ -26,6 +38,25 @@ export interface Calculation {
   /** Berechneter Einsatz je Wette (nur für Wetten ohne festen Einsatz). */
   stakeHints: (number | undefined)[];
   hint?: string;
+}
+
+export const emptyBet = (covers: number): BetInput => ({
+  provider: '',
+  type: 'normal',
+  odds: '',
+  stake: '',
+  covers,
+  tax: false,
+  refundKind: 'bar',
+  refundCap: '',
+  maxStake: '',
+});
+
+/** Leer: `undefined`. Zahl über 0: die Zahl. Sonst `null` (ungültig). */
+function optionalPositive(text: string): number | undefined | null {
+  if (text.trim() === '') return undefined;
+  const n = parseNumber(text);
+  return n !== null && n > 0 ? n : null;
 }
 
 /** Übersetzt die Eingaben der Oberfläche in eine Rechnung des Kerns. */
@@ -40,12 +71,26 @@ export function calculate(state: UiState, settings: Settings): Calculation {
     if (bet.odds.trim() !== '' && (odds === null || odds <= 1)) {
       errors[i].odds = 'Die Quote muss größer als 1 sein.';
     }
-    const fixed = parseNumber(bet.stake);
-    if (bet.stake.trim() !== '' && (fixed === null || fixed <= 0)) {
-      errors[i].stake = 'Der Einsatz muss größer als 0 sein.';
-    }
-    if (odds !== null && odds > 1 && !errors[i].stake) {
-      legs.push({ bet: { type: 'normal', odds, tax: false }, covers: [bet.covers], stake: fixed ?? undefined });
+    const fixed = optionalPositive(bet.stake);
+    if (fixed === null) errors[i].stake = 'Der Einsatz muss größer als 0 sein.';
+    const refundCap = bet.type === 'risikofrei' ? optionalPositive(bet.refundCap) : undefined;
+    if (refundCap === null) errors[i].refundCap = 'Der Höchstbetrag muss größer als 0 sein.';
+    const maxStake = bet.type === 'boost' ? optionalPositive(bet.maxStake) : undefined;
+    if (maxStake === null) errors[i].maxStake = 'Der Max-Einsatz muss größer als 0 sein.';
+
+    if (odds !== null && odds > 1 && fixed !== null && refundCap !== null && maxStake !== null) {
+      legs.push({
+        bet: {
+          type: bet.type,
+          odds,
+          tax: bet.tax,
+          refundKind: bet.type === 'risikofrei' ? bet.refundKind : undefined,
+          refundCap,
+          maxStake,
+        },
+        covers: [bet.covers],
+        stake: fixed,
+      });
       used.push(i);
     }
   });

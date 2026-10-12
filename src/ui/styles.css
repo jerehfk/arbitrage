@@ -177,6 +177,87 @@ button {
   padding-right: 40px;
 }
 
+.f-odds {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 4px 10px;
+}
+
+.f-odds > label:first-child {
+  flex: 1;
+}
+
+.f-odds .error {
+  flex-basis: 100%;
+  margin-top: 0;
+}
+
+.bet .tax {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.bet .tax > span {
+  display: inline;
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+
+input[role='switch'] {
+  appearance: none;
+  flex: none;
+  width: 36px;
+  min-height: 0;
+  height: 20px;
+  padding: 0;
+  position: relative;
+  background: var(--line);
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+input[role='switch']::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: var(--surface);
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+  transition: transform 0.15s;
+}
+
+input[role='switch']:checked {
+  background: var(--accent);
+}
+
+input[role='switch']:checked::after {
+  transform: translateX(16px);
+}
+
+.extras {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}
+
+.f-odds,
+.f-stake {
+  grid-column: 1 / -1;
+}
+
 .remove {
   position: absolute;
   top: 8px;
@@ -276,6 +357,12 @@ button {
   background: var(--muted);
 }
 
+.rows .detail {
+  grid-column: 1 / -1;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
 .meta,
 .hint {
   margin: 10px 0 0;
@@ -291,13 +378,20 @@ button {
 
 @media (min-width: 640px) {
   .bet {
-    grid-template-columns: 1.4fr 1.2fr 0.8fr 1fr;
+    grid-template-columns: repeat(6, 1fr);
     padding-right: 52px;
   }
 
-  .f-provider {
-    grid-column: auto;
+  .f-provider,
+  .f-type,
+  .f-covers {
+    grid-column: span 2;
     padding-right: 0;
+  }
+
+  .f-odds,
+  .f-stake {
+    grid-column: span 3;
   }
 }
 
