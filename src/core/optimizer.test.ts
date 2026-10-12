@@ -101,6 +101,17 @@ describe('Grenzfälle', () => {
     expect(optimize(legs, 2, settings).status).toBe('unbegrenzt');
   });
 
+  test('Arbitrage mit Budget: Einsätze ergeben das Budget', () => {
+    const legs: Leg[] = [
+      { bet: normal(2.1), covers: [0] },
+      { bet: normal(2.1), covers: [1] },
+    ];
+    const plan = optimize(legs, 2, settings, 100);
+    expect(plan.status).toBe('optimal');
+    expect(plan.totalStake).toBeCloseTo(100, 4);
+    expect(plan.minValue).toBeCloseTo(5, 4);
+  });
+
   test('ohne freie Wetten: nur Auswertung der festen', () => {
     const legs: Leg[] = [{ bet: normal(2), covers: [0], stake: 10 }];
     const plan = optimize(legs, 2, settings);

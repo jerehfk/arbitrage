@@ -38,7 +38,12 @@ export interface Calculation {
   /** Berechneter Einsatz je Wette (nur für Wetten ohne festen Einsatz). */
   stakeHints: (number | undefined)[];
   hint?: string;
+  /** Gesamteinsatz, mit dem gerechnet wurde, weil kein Einsatz fest war. */
+  assumedBudget?: number;
 }
+
+/** Gesamteinsatz, wenn der Nutzer keinen Einsatz festlegt. */
+export const DEFAULT_BUDGET = 100;
 
 export const emptyBet = (covers: number): BetInput => ({
   provider: '',
@@ -97,7 +102,9 @@ export function calculate(state: UiState, settings: Settings): Calculation {
 
   if (legs.length === 0) return { errors, stakeHints, hint: 'Trage die Quoten ein.' };
 
-  const plan = optimize(legs, state.outcomes.length, settings);
+  const nothingFixed = legs.every((leg) => leg.stake === undefined);
+  const budget = nothingFixed ? DEFAULT_BUDGET : undefined;
+  const plan = optimize(legs, state.outcomes.length, settings, budget);
   used.forEach((betIndex, legIndex) => {
     if (legs[legIndex].stake === undefined) stakeHints[betIndex] = plan.stakes[legIndex];
   });
@@ -109,7 +116,6 @@ export function calculate(state: UiState, settings: Settings): Calculation {
       hint: 'Der Gewinn wächst mit dem Einsatz ohne Grenze. Lege bei einer Wette einen Einsatz fest.',
     };
   }
-  const nothingFixed = legs.every((leg) => leg.stake === undefined);
   if (nothingFixed && plan.totalStake === 0) {
     return {
       plan,
@@ -118,5 +124,5 @@ export function calculate(state: UiState, settings: Settings): Calculation {
       hint: 'Mit diesen Quoten ist kein Gewinn möglich. Lege bei einer Wette einen Einsatz fest, um die Ergebnisse zu sehen.',
     };
   }
-  return { plan, errors, stakeHints };
+  return { plan, errors, stakeHints, assumedBudget: budget };
 }

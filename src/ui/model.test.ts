@@ -27,7 +27,7 @@ describe('calculate', () => {
     expect(calc.plan?.equal).toBe(true);
   });
 
-  test('ohne festen Einsatz bei Arbitrage: Hinweis statt Zahlen', () => {
+  test('ohne festen Einsatz bei Arbitrage: rechnet mit 100 € Gesamteinsatz', () => {
     const calc = calculate(
       state([
         bet({ provider: '', odds: '2,1', stake: '', covers: 0 }),
@@ -35,8 +35,24 @@ describe('calculate', () => {
       ]),
       settings,
     );
-    expect(calc.plan).toBeUndefined();
-    expect(calc.hint).toMatch(/Einsatz fest/);
+    expect(calc.hint).toBeUndefined();
+    expect(calc.assumedBudget).toBe(100);
+    expect(calc.plan?.totalStake).toBeCloseTo(100, 4);
+    expect(calc.stakeHints[0]).toBeCloseTo(50, 4);
+    expect(calc.stakeHints[1]).toBeCloseTo(50, 4);
+    expect(calc.plan?.minValue).toBeCloseTo(5, 4);
+  });
+
+  test('mit festem Einsatz gilt der Gesamteinsatz nicht', () => {
+    const calc = calculate(
+      state([
+        bet({ odds: '2,1', stake: '10', covers: 0 }),
+        bet({ odds: '2,1', stake: '', covers: 1 }),
+      ]),
+      settings,
+    );
+    expect(calc.assumedBudget).toBeUndefined();
+    expect(calc.stakeHints[1]).toBeCloseTo(10, 6);
   });
 
   test('ohne Arbitrage und ohne festen Einsatz: Hinweis', () => {

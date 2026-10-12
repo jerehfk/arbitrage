@@ -230,6 +230,12 @@ export function App() {
                 {plan.equal ? 'Alle Ausgänge bringen gleich viel.' : 'Die Ausgänge bringen unterschiedlich viel.'}
                 <br />
                 Eingesetzt: {formatEuro(plan.totalStake)}
+                {calc.assumedBudget !== undefined && (
+                  <>
+                    <br />
+                    Kein Einsatz festgelegt, gerechnet mit {formatEuro(calc.assumedBudget)} Gesamteinsatz.
+                  </>
+                )}
               </p>
             </>
           ) : null}
