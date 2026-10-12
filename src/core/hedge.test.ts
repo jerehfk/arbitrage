@@ -42,9 +42,16 @@ describe('suggestHedges', () => {
     expect(sizes).toEqual([...sizes].sort((a, b) => a - b));
   });
 
-  test('ohne Kombi-Wette zuerst: Remis oder Auswärts plus Unter 2,5', () => {
+  test('beste zuerst: zwei Wetten ohne Überschneidung, Remis oder Auswärts plus Heim & unter', () => {
     const first = suggestHedges(marketCells(homeOver))[0].map((m) => describeMarket(m, names)).sort();
-    expect(first).toEqual(['Remis oder Man Utd', 'Unter 2,5 Tore']);
+    expect(first).toEqual(['Atlético gewinnt & unter 2,5 Tore', 'Remis oder Man Utd']);
+  });
+
+  test('bei gleicher Zahl und Überschneidung steht die Variante mit weniger Kombi-Wetten vorn', () => {
+    // Heim & unter wird nur durch Kombis oder durch "Unter" abgedeckt; "Unter" überschneidet, ist aber kein Kombi.
+    const options = suggestHedges(marketCells(homeOver), 20).filter((o) => o.length === 2);
+    const overlaps = options.map((o) => o.flatMap(marketCells).length - 5);
+    expect(overlaps).toEqual([...overlaps].sort((a, b) => a - b));
   });
 
   test('einfacher Fall: Heim gewinnt (egal) wird mit einer Wette "Remis oder Auswärts" abgesichert', () => {

@@ -62,41 +62,35 @@ export function HedgeTab({ state, setState }: Props) {
 
       <div class="side">
         <section class="hedges" aria-labelledby="h-hedges">
-          <h2 id="h-hedges">Absicherungen</h2>
-          {calc.hint ? (
-            <p class="hint">{calc.hint}</p>
-          ) : (
+          <h2 id="h-hedges">Beste Absicherung</h2>
+          {calc.best ? (
             <>
               <table class="options">
                 <thead>
                   <tr>
-                    <th scope="col">Wetten</th>
-                    <th scope="col">Absicherung</th>
+                    <th scope="col">
+                      {calc.best.legs.length === 1 ? 'Setze zusätzlich auf' : `Setze zusätzlich auf diese ${calc.best.legs.length} Wetten`}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {calc.options.map((option) => (
-                    <tr key={option.id}>
-                      <td>{option.legs.length}</td>
+                  {calc.best.legs.map((leg) => (
+                    <tr key={leg.label}>
                       <td>
-                        <ul>
-                          {option.legs.map((leg) => (
-                            <li key={leg.label}>
-                              {leg.label}
-                              {leg.combo && <span class="badge">Kombi</span>}
-                            </li>
-                          ))}
-                        </ul>
+                        {leg.label}
+                        {leg.combo && <span class="badge">Kombi</span>}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
               <p class="note">
-                Wenige Wetten zuerst. Ungeprüft: ob es diese Märkte beim Anbieter oder an der Börse gibt, weiß die App
-                nicht.
+                Wenige Wetten, keine doppelt abgedeckten Fälle, möglichst wenige Kombi-Wetten. Ungeprüft: ob es diese
+                Märkte beim Anbieter oder an der Börse gibt, weiß die App nicht.
               </p>
             </>
+          ) : (
+            <p class="hint">{calc.hint}</p>
           )}
         </section>
       </div>

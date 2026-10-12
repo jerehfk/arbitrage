@@ -82,7 +82,8 @@ const MAX_HEDGE_BETS = 3;
 
 /**
  * Mengen von Wetten, die zusammen alle Fälle außerhalb von `cover` abdecken, ohne `cover` selbst zu berühren.
- * Wenige Wetten zuerst, dann wenige Kombi-Wetten, dann wenig Überschneidung.
+ * Beste zuerst: wenige Wetten, dann keine Überschneidung (doppelt abgedeckte Fälle kosten Einsatz ohne Mehrertrag),
+ * dann wenige Kombi-Wetten (höhere Marge, selten an der Börse).
  */
 export function suggestHedges(cover: number[], limit = 6): Market[][] {
   const covered = new Set(cover);
@@ -116,8 +117,8 @@ export function suggestHedges(cover: number[], limit = 6): Market[][] {
   found.sort(
     (a, b) =>
       a.markets.length - b.markets.length ||
-      a.combos - b.combos ||
       a.overlap - b.overlap ||
+      a.combos - b.combos ||
       a.markets.map(marketKey).join().localeCompare(b.markets.map(marketKey).join()),
   );
   return found.slice(0, limit).map((f) => f.markets);

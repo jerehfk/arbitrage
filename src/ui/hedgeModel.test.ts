@@ -9,28 +9,25 @@ const state = (patch: Partial<HedgeState> = {}): HedgeState => ({
 });
 
 describe('calculateHedge', () => {
-  test('Beispiel Atlético & über 2,5: Beschriftung und erster Vorschlag', () => {
+  test('Beispiel Atlético & über 2,5: genau eine beste Absicherung aus zwei Wetten', () => {
     const calc = calculateHedge(state());
     expect(calc.boostLabel).toBe('Atlético gewinnt & über 2,5 Tore');
-    expect(calc.options.length).toBe(6);
-    expect(calc.options[0].legs.map((l) => l.label).sort()).toEqual(['Remis oder Man Utd', 'Unter 2,5 Tore']);
-    expect(calc.options[0].legs.every((l) => !l.combo)).toBe(true);
-  });
-
-  test('Vorschläge nach Zahl der Wetten sortiert, Kombi-Wetten markiert', () => {
-    const calc = calculateHedge(state());
-    const sizes = calc.options.map((o) => o.legs.length);
-    expect(sizes).toEqual([...sizes].sort((a, b) => a - b));
-    expect(calc.options.some((o) => o.legs.some((l) => l.combo))).toBe(true);
+    expect(calc.best?.legs.map((l) => l.label).sort()).toEqual([
+      'Atlético gewinnt & unter 2,5 Tore',
+      'Remis oder Man Utd',
+    ]);
+    expect(calc.best?.legs.filter((l) => l.combo)).toHaveLength(1);
   });
 
   test('Heim gewinnt (egal): eine einzige Absicherung', () => {
     const calc = calculateHedge(state({ goals: 'egal' }));
-    expect(calc.options[0].legs.map((l) => l.label)).toEqual(['Remis oder Man Utd']);
+    expect(calc.best?.legs.map((l) => l.label)).toEqual(['Remis oder Man Utd']);
   });
 
-  test('kein Ergebnis gewählt oder alles abgedeckt: Hinweis', () => {
-    expect(calculateHedge(state({ results: [] })).hint).toMatch(/mindestens ein Ergebnis/);
+  test('kein Ergebnis gewählt oder alles abgedeckt: Hinweis statt Absicherung', () => {
+    const none = calculateHedge(state({ results: [] }));
+    expect(none.hint).toMatch(/mindestens ein Ergebnis/);
+    expect(none.best).toBeUndefined();
     expect(calculateHedge(state({ results: [0, 1, 2], goals: 'egal' })).hint).toMatch(/nichts abzusichern/);
   });
 });
