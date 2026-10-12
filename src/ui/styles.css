@@ -127,9 +127,20 @@ button {
 }
 
 .outcomes li {
-  display: flex;
-  align-items: center;
-  width: 130px;
+  position: relative;
+  width: 112px;
+}
+
+.outcomes input {
+  padding-right: 38px;
+}
+
+.outcomes .icon {
+  position: absolute;
+  top: 4px;
+  right: 2px;
+  width: 36px;
+  height: 36px;
 }
 
 .bets {
