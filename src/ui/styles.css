@@ -239,11 +239,6 @@ button {
   color: var(--muted);
 }
 
-.f-provider {
-  grid-column: 1 / -1;
-  padding-right: 40px;
-}
-
 .f-covers {
   grid-column: 1 / -1;
   min-width: 0;
@@ -405,7 +400,17 @@ input[role='switch']:checked::after {
   color: var(--loss);
 }
 
+.layout {
+  display: flex;
+  flex-direction: column;
+}
+
+.side {
+  display: contents;
+}
+
 .result {
+  order: 3;
   position: sticky;
   bottom: 0;
   margin: 0 -16px;
@@ -518,7 +523,6 @@ input[role='switch']:checked::after {
     padding-right: 52px;
   }
 
-  .f-provider,
   .f-type {
     grid-column: span 3;
     padding-right: 0;
@@ -537,19 +541,168 @@ input[role='switch']:checked::after {
 @media (min-width: 900px) {
   .layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 340px;
+    grid-template-columns: minmax(0, 1fr) 380px;
     gap: 24px;
     align-items: start;
   }
 
-  .result {
+  .side {
+    display: block;
     position: sticky;
     top: 16px;
-    bottom: auto;
-    margin: 0;
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+  }
+
+  .result {
+    position: static;
+    margin: 0 0 16px;
     border: 1px solid var(--line);
     border-radius: var(--radius);
   }
+}
+
+/* Reiter */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.tabs button {
+  flex: 1;
+  min-height: 44px;
+  background: none;
+  border: 0;
+  border-radius: 7px;
+  color: var(--muted);
+}
+
+.tabs button.on {
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 600;
+}
+
+/* Absichern */
+.game {
+  display: grid;
+  grid-template-columns: 1fr 1fr 90px;
+  gap: 8px 10px;
+}
+
+.game label > span {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.note {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.hedges {
+  order: 2;
+  margin-bottom: 24px;
+}
+
+.options {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.option {
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.option.on {
+  border-color: var(--accent);
+}
+
+.option-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  font-weight: 600;
+}
+
+.option-head input {
+  width: 18px;
+  min-height: 0;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+.leg {
+  padding: 8px 0;
+  border-top: 1px dashed var(--line);
+}
+
+.leg-name {
+  margin: 0 0 4px;
+}
+
+.badge {
+  margin-left: 8px;
+  padding: 1px 6px;
+  font-size: 0.7rem;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.leg-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 4px 12px;
+}
+
+.leg-fields label:first-child {
+  width: 90px;
+}
+
+.leg-fields label > span {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.leg-fields .tax {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.leg-fields .tax > span {
+  display: inline;
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+
+.leg-stake {
+  margin: 0 0 0 auto;
+  text-align: right;
+}
+
+.leg-stake span {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--muted);
 }
 
 @media (prefers-reduced-motion: reduce) {
