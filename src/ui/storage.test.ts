@@ -31,8 +31,7 @@ describe('load und save', () => {
     const hedge = {
       ...initialHedge,
       home: 'Atlético',
-      results: [0, 1],
-      goals: 'unter' as const,
+      text: 'Atlético gewinnt & über 2,5 Tore',
     };
     const settings = { taxPercent: '5', conversionPercent: '70', budget: '200' };
     save(store, { tab: 'frei', state, hedge, settings });
@@ -59,13 +58,12 @@ describe('load und save', () => {
   test('ungültige Werte werden bereinigt', () => {
     const raw = JSON.stringify({
       state: { outcomes: ['1', '2'], bets: [{ odds: '2', covers: [5, -1], type: 'quatsch' }] },
-      hedge: { results: [0, 7, 'x'], goals: 'komisch' },
+      hedge: { home: 5, text: 'x' },
     });
     const saved = load(memory(raw));
     expect(saved.state?.bets[0].covers).toEqual([0]);
     expect(saved.state?.bets[0].type).toBe('normal');
-    expect(saved.hedge?.results).toEqual([0]);
-    expect(saved.hedge?.goals).toBe('ueber');
+    expect(saved.hedge).toEqual({ home: '', away: '', text: 'x' });
   });
 
   test('ohne Speicher oder bei Fehler: kein Absturz', () => {

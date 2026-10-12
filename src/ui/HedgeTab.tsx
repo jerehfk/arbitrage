@@ -1,23 +1,16 @@
 import { useMemo } from 'preact/hooks';
-import type { Goals } from '../core/hedge';
-import { Chips } from './Chips';
 import { calculateHedge, type HedgeState } from './hedgeModel';
-
-const GOALS: Goals[] = ['egal', 'ueber', 'unter'];
 
 interface Props {
   state: HedgeState;
   setState: (update: (s: HedgeState) => HedgeState) => void;
 }
 
-/** Reiter "Absichern": eigene Wette wählen, passende Absicherungen als Tabelle sehen. */
+/** Reiter "Absichern": eigene Wette als Text eingeben, die beste Absicherung als Tabelle sehen. */
 export function HedgeTab({ state, setState }: Props) {
   const calc = useMemo(() => calculateHedge(state), [state]);
   const set = (patch: Partial<HedgeState>) => setState((s) => ({ ...s, ...patch }));
-
-  const home = state.home.trim() || 'Heim';
-  const away = state.away.trim() || 'Auswärts';
-  const line = state.line.trim() || '2,5';
+  const namesMissing = calc.unknown.length > 0 && (!state.home.trim() || !state.away.trim());
 
   return (
     <main class="layout">
@@ -34,29 +27,23 @@ export function HedgeTab({ state, setState }: Props) {
                 <span>Auswärts</span>
                 <input value={state.away} placeholder="Auswärts" onInput={(e) => set({ away: e.currentTarget.value })} />
               </label>
-              <label>
-                <span>Torlinie</span>
-                <input inputMode="decimal" value={state.line} onInput={(e) => set({ line: e.currentTarget.value })} />
-              </label>
             </div>
-            <Chips
-              legend="Gewinnt bei (Ergebnis)"
-              name="results"
-              mode="checkbox"
-              options={[home, 'Remis', away]}
-              selected={state.results}
-              onChange={(results) => set({ results })}
-            />
-            <Chips
-              legend="Tore"
-              name="goals"
-              mode="radio"
-              options={['Egal', `Über ${line}`, `Unter ${line}`]}
-              selected={[GOALS.indexOf(state.goals)]}
-              onChange={([g]) => set({ goals: GOALS[g] })}
-            />
+            <label class="wide">
+              <span>Wette oder Kombi-Wette</span>
+              <input
+                value={state.text}
+                placeholder="z. B. Atlético gewinnt & über 2,5 Tore"
+                autoComplete="off"
+                onInput={(e) => set({ text: e.currentTarget.value })}
+              />
+            </label>
           </div>
-          {calc.boostLabel && <p class="note">Deine Wette: {calc.boostLabel}</p>}
+          {calc.understood && (
+            <p class="note">
+              Verstanden als: <strong>{calc.understood}</strong>
+            </p>
+          )}
+          {namesMissing && <p class="note">Tipp: Trage oben die Teamnamen ein, dann erkennt die App sie im Text.</p>}
         </section>
       </div>
 
@@ -85,8 +72,9 @@ export function HedgeTab({ state, setState }: Props) {
                 </tbody>
               </table>
               <p class="note">
-                Wenige Wetten, keine doppelt abgedeckten Fälle, möglichst wenige Kombi-Wetten. Ungeprüft: ob es diese
-                Märkte beim Anbieter oder an der Börse gibt, weiß die App nicht.
+                Wenige Wetten, wenig doppelt abgedeckte Fälle, möglichst wenige Kombi-Wetten. Ungeprüft: ob es diese
+                Märkte beim Anbieter oder an der Börse gibt, weiß die App nicht. Grobe Annahme: höchstens 5 Tore pro Team
+                und Halbzeit.
               </p>
             </>
           ) : (

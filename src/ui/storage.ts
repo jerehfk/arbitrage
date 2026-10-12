@@ -1,11 +1,9 @@
-import type { Goals } from '../core/hedge';
 import { initialHedge, type HedgeState } from './hedgeModel';
 import { emptyFields, type BetFields, type BetInput, type UiState } from './model';
 import { defaultSettings, type UiSettings } from './settings';
 
 const KEY = 'sportwetten-rechner:v1';
 const BET_TYPES = ['normal', 'gratiswette', 'risikofrei', 'boost'];
-const GOALS = ['egal', 'ueber', 'unter'];
 
 export type Tab = 'absichern' | 'frei';
 
@@ -63,9 +61,7 @@ function readHedge(v: unknown): HedgeState | undefined {
   return {
     home: text(v.home),
     away: text(v.away),
-    line: text(v.line, initialHedge.line),
-    results: indices(v.results, 3),
-    goals: (GOALS.includes(text(v.goals)) ? v.goals : 'ueber') as Goals,
+    text: text(v.text),
   };
 }
 

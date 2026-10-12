@@ -1,54 +1,50 @@
-import {
-  describeMarket,
-  isCombo,
-  marketCells,
-  suggestHedges,
-  type Goals,
-  type Names,
-} from '../core/hedge';
+import { buildLibrary, findHedge } from '../core/hedge';
+import { isCombo } from '../core/match';
+import { parseBet } from '../core/parse';
 
-/** Eingaben des Reiters "Absichern": nur die eigene Wette, ohne Quoten und Einsätze. */
+/** Eingaben des Reiters "Absichern": Teamnamen und die eigene Wette als freier Text. */
 export interface HedgeState {
   home: string;
   away: string;
-  /** Torlinie als Text, z. B. "2,5" (nur Beschriftung). */
-  line: string;
-  /** Ergebnisse (0 Heim, 1 Remis, 2 Auswärts), bei denen die eigene Wette gewinnt. */
-  results: number[];
-  goals: Goals;
+  text: string;
 }
 
-export const initialHedge: HedgeState = {
-  home: '',
-  away: '',
-  line: '2,5',
-  results: [0],
-  goals: 'ueber',
-};
+export const initialHedge: HedgeState = { home: '', away: '', text: '' };
 
 export interface HedgeLeg {
   label: string;
   combo: boolean;
 }
 
-export interface HedgeBest {
-  legs: HedgeLeg[];
-}
-
 export interface HedgeCalculation {
-  boostLabel: string;
-  /** Die beste Absicherung: wenige Wetten, keine doppelt abgedeckten Fälle, wenige Kombi-Wetten. */
-  best?: HedgeBest;
+  /** Wie die App die Wette verstanden hat. */
+  understood: string;
+  /** Teile des Textes, die nicht verstanden wurden. */
+  unknown: string[];
+  /** Die beste Absicherung: wenige Wetten, wenig Überschneidung, wenige Kombi-Wetten. */
+  best?: { legs: HedgeLeg[] };
   hint?: string;
 }
 
-/** Beste Absicherung für die eigene Wette: eine Menge von Wetten, die alle übrigen Fälle abdeckt. */
 export function calculateHedge(state: HedgeState): HedgeCalculation {
-  const names: Names = { home: state.home, away: state.away, line: state.line };
-  if (state.results.length === 0) return { boostLabel: '', hint: 'Wähle mindestens ein Ergebnis.' };
-  const market = { results: state.results, goals: state.goals };
-  const boostLabel = describeMarket(market, names);
-  const [best] = suggestHedges(marketCells(market), 1);
-  if (!best) return { boostLabel, hint: 'Diese Wette deckt schon alle Fälle ab, es gibt nichts abzusichern.' };
-  return { boostLabel, best: { legs: best.map((m) => ({ label: describeMarket(m, names), combo: isCombo(m) })) } };
+  const names = { home: state.home, away: state.away };
+  const parsed = parseBet(state.text, names);
+  const base = { understood: parsed.understood, unknown: parsed.unknown };
+  if (parsed.empty) {
+    return { ...base, hint: 'Schreibe deine Wette in das Feld, z. B. „Atlético gewinnt & über 2,5 Tore“.' };
+  }
+  if (parsed.unknown.length > 0 || !parsed.market) {
+    return { ...base, hint: 'Nicht verstanden: ' + parsed.unknown.map((u) => `„${u}“`).join(', ') + '. Diese Wette wird nicht berechnet.' };
+  }
+  const hedge = findHedge(parsed.market, buildLibrary(names, parsed.info));
+  switch (hedge.status) {
+    case 'unmoeglich':
+      return { ...base, hint: 'Diese Wette kann nie eintreten. Es gibt nichts abzusichern.' };
+    case 'nichts':
+      return { ...base, hint: 'Diese Wette deckt schon alle Fälle ab. Es gibt nichts abzusichern.' };
+    case 'keine':
+      return { ...base, hint: 'Für diese Wette habe ich keine Absicherung mit bis zu 3 Wetten gefunden.' };
+    default:
+      return { ...base, best: { legs: hedge.legs.map((m) => ({ label: m.label, combo: isCombo(m) })) } };
+  }
 }
