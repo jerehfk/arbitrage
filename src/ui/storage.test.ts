@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'vitest';
+import { initialHedge } from './hedgeModel';
 import { emptyBet } from './model';
 import { defaultSettings } from './settings';
-import { load, providerKey, rememberTax, save, withProvider } from './storage';
+import { load, save } from './storage';
 
 function memory(initial?: string) {
   const data = new Map<string, string>();
@@ -13,22 +14,32 @@ function memory(initial?: string) {
 }
 
 describe('load und save', () => {
-  test('leerer Speicher: Standard ohne Eingaben', () => {
+  test('leerer Speicher: Standard ohne Eingaben, Reiter Absichern', () => {
     const saved = load(memory());
+    expect(saved.tab).toBe('absichern');
     expect(saved.state).toBeUndefined();
+    expect(saved.hedge).toBeUndefined();
     expect(saved.settings).toEqual(defaultSettings);
-    expect(saved.taxByProvider).toEqual({});
   });
 
-  test('Rundreise erhält Eingaben, Einstellungen und Anbieter-Schalter', () => {
+  test('Rundreise erhält Reiter, Eingaben beider Reiter und Einstellungen', () => {
     const store = memory();
     const state = {
       outcomes: ['1', 'X', '2'],
-      bets: [{ ...emptyBet(0), provider: 'Tipico', odds: '2,1', covers: [0, 1], tax: true }, emptyBet(2)],
+      bets: [{ ...emptyBet(0), odds: '2,1', covers: [0, 1], tax: true }, emptyBet(2)],
+    };
+    const hedge = {
+      ...initialHedge,
+      home: 'Atlético',
+      results: [0, 1],
+      goals: 'unter' as const,
+      boost: { ...initialHedge.boost, odds: '5', stake: '10', tax: true },
+      hedges: { '12e': { odds: '2,5', tax: true } },
+      selected: '12e+0u',
     };
     const settings = { taxPercent: '5', conversionPercent: '70', budget: '200' };
-    save(store, { state, settings, taxByProvider: { tipico: true } });
-    expect(load(store)).toEqual({ state, settings, taxByProvider: { tipico: true } });
+    save(store, { tab: 'frei', state, hedge, settings });
+    expect(load(store)).toEqual({ tab: 'frei', state, hedge, settings });
   });
 
   test('kaputtes JSON: Standard', () => {
@@ -38,21 +49,27 @@ describe('load und save', () => {
   test('ungültige Eingaben werden verworfen, Einstellungen bleiben', () => {
     const raw = JSON.stringify({
       state: { outcomes: ['1'], bets: [] },
+      hedge: 'quatsch',
       settings: { taxPercent: '4' },
     });
     const saved = load(memory(raw));
     expect(saved.state).toBeUndefined();
+    expect(saved.hedge).toBeUndefined();
     expect(saved.settings.taxPercent).toBe('4');
     expect(saved.settings.budget).toBe('100');
   });
 
-  test('ungültige Ausgang-Indizes werden bereinigt', () => {
+  test('ungültige Werte werden bereinigt', () => {
     const raw = JSON.stringify({
       state: { outcomes: ['1', '2'], bets: [{ odds: '2', covers: [5, -1], type: 'quatsch' }] },
+      hedge: { boost: {}, results: [0, 7, 'x'], goals: 'komisch', hedges: { a: { odds: 3 } } },
     });
-    const bet = load(memory(raw)).state?.bets[0];
-    expect(bet?.covers).toEqual([0]);
-    expect(bet?.type).toBe('normal');
+    const saved = load(memory(raw));
+    expect(saved.state?.bets[0].covers).toEqual([0]);
+    expect(saved.state?.bets[0].type).toBe('normal');
+    expect(saved.hedge?.results).toEqual([0]);
+    expect(saved.hedge?.goals).toBe('ueber');
+    expect(saved.hedge?.hedges.a).toEqual({ odds: '', tax: false });
   });
 
   test('ohne Speicher oder bei Fehler: kein Absturz', () => {
@@ -68,28 +85,5 @@ describe('load und save', () => {
     };
     expect(load(broken).settings).toEqual(defaultSettings);
     expect(() => save(broken, load(undefined))).not.toThrow();
-  });
-});
-
-describe('Steuer-Schalter pro Anbieter', () => {
-  test('Schlüssel ignoriert Groß-/Kleinschreibung und Leerzeichen', () => {
-    expect(providerKey('  TiPiCo ')).toBe('tipico');
-  });
-
-  test('bekannter Anbieter setzt den Schalter', () => {
-    const bet = withProvider(emptyBet(0), 'Tipico', { tipico: true });
-    expect(bet.provider).toBe('Tipico');
-    expect(bet.tax).toBe(true);
-  });
-
-  test('unbekannter Anbieter lässt den Schalter unverändert', () => {
-    const bet = withProvider({ ...emptyBet(0), tax: true }, 'bet365', { tipico: false });
-    expect(bet.tax).toBe(true);
-  });
-
-  test('rememberTax merkt nur bei vorhandenem Namen', () => {
-    expect(rememberTax({}, 'Tipico', true)).toEqual({ tipico: true });
-    expect(rememberTax({ tipico: true }, 'Tipico', false)).toEqual({ tipico: false });
-    expect(rememberTax({}, '  ', true)).toEqual({});
   });
 });

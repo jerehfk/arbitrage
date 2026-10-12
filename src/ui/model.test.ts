@@ -37,8 +37,8 @@ describe('calculate', () => {
   test('Arbitrage: ein Einsatz fest, der andere wird berechnet', () => {
     const calc = calculate(
       state([
-        bet({ provider: 'Tipico', odds: '2,10', stake: '100', covers: [0] }),
-        bet({ provider: 'bet365', odds: '2.1', stake: '', covers: [1] }),
+        bet({ odds: '2,10', stake: '100', covers: [0] }),
+        bet({ odds: '2.1', stake: '', covers: [1] }),
       ]),
       settings,
     );
@@ -52,8 +52,8 @@ describe('calculate', () => {
   test('ohne festen Einsatz bei Arbitrage: rechnet mit 100 € Gesamteinsatz', () => {
     const calc = calculate(
       state([
-        bet({ provider: '', odds: '2,1', stake: '', covers: [0] }),
-        bet({ provider: '', odds: '2,1', stake: '', covers: [1] }),
+        bet({ odds: '2,1', stake: '', covers: [0] }),
+        bet({ odds: '2,1', stake: '', covers: [1] }),
       ]),
       settings,
     );
@@ -80,8 +80,8 @@ describe('calculate', () => {
   test('ohne Arbitrage und ohne festen Einsatz: Hinweis', () => {
     const calc = calculate(
       state([
-        bet({ provider: '', odds: '1,5', stake: '', covers: [0] }),
-        bet({ provider: '', odds: '1,5', stake: '', covers: [1] }),
+        bet({ odds: '1,5', stake: '', covers: [0] }),
+        bet({ odds: '1,5', stake: '', covers: [1] }),
       ]),
       settings,
     );
@@ -91,8 +91,8 @@ describe('calculate', () => {
   test('ungültige Quote wird markiert und nicht gerechnet', () => {
     const calc = calculate(
       state([
-        bet({ provider: '', odds: '1', stake: '10', covers: [0] }),
-        bet({ provider: '', odds: '2', stake: '', covers: [1] }),
+        bet({ odds: '1', stake: '10', covers: [0] }),
+        bet({ odds: '2', stake: '', covers: [1] }),
       ]),
       settings,
     );
@@ -101,12 +101,12 @@ describe('calculate', () => {
   });
 
   test('ungültiger Einsatz wird markiert', () => {
-    const calc = calculate(state([bet({ provider: '', odds: '2', stake: '-5', covers: [0] })]), settings);
+    const calc = calculate(state([bet({ odds: '2', stake: '-5', covers: [0] })]), settings);
     expect(calc.errors[0].stake).toBeDefined();
   });
 
   test('nichts eingetragen', () => {
-    const calc = calculate(state([bet({ provider: '', odds: '', stake: '', covers: [0] })]), settings);
+    const calc = calculate(state([bet({ odds: '', stake: '', covers: [0] })]), settings);
     expect(calc.plan).toBeUndefined();
     expect(calc.hint).toBe('Trage die Quoten ein.');
   });

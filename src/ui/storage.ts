@@ -1,42 +1,51 @@
-import { emptyBet, type BetInput, type UiState } from './model';
+import type { Goals } from '../core/hedge';
+import { initialHedge, type HedgeState } from './hedgeModel';
+import { emptyFields, type BetFields, type BetInput, type UiState } from './model';
 import { defaultSettings, type UiSettings } from './settings';
 
 const KEY = 'sportwetten-rechner:v1';
 const BET_TYPES = ['normal', 'gratiswette', 'risikofrei', 'boost'];
+const GOALS = ['egal', 'ueber', 'unter'];
+
+export type Tab = 'absichern' | 'frei';
 
 /** Was zwischen zwei Besuchen erhalten bleibt. */
 export interface Saved {
-  /** Letzte Eingaben; fehlt beim ersten Besuch. */
+  tab: Tab;
+  /** Eingaben des Reiters "Frei"; fehlt beim ersten Besuch. */
   state?: UiState;
+  /** Eingaben des Reiters "Absichern"; fehlt beim ersten Besuch. */
+  hedge?: HedgeState;
   settings: UiSettings;
-  /** Steuer-Schalter je Anbieter, Schlüssel siehe `providerKey`. */
-  taxByProvider: Record<string, boolean>;
 }
 
 type Store = Pick<Storage, 'getItem' | 'setItem'>;
 
-export const providerKey = (name: string) => name.trim().toLowerCase();
-
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
 const text = (v: unknown, fallback = '') => (typeof v === 'string' ? v : fallback);
 
-function readBet(v: unknown, outcomeCount: number): BetInput | undefined {
-  if (!isObject(v)) return undefined;
-  const covers = Array.isArray(v.covers)
-    ? v.covers.filter((c): c is number => Number.isInteger(c) && c >= 0 && c < outcomeCount)
-    : [];
+function readFields(v: Record<string, unknown>): BetFields {
   return {
-    ...emptyBet(0),
-    provider: text(v.provider),
-    type: BET_TYPES.includes(text(v.type)) ? (v.type as BetInput['type']) : 'normal',
+    ...emptyFields(),
+    type: BET_TYPES.includes(text(v.type)) ? (v.type as BetFields['type']) : 'normal',
     odds: text(v.odds),
     stake: text(v.stake),
-    covers: covers.length > 0 ? [...new Set(covers)].sort() : [0],
     tax: v.tax === true,
     refundKind: v.refundKind === 'gratiswette' ? 'gratiswette' : 'bar',
     refundCap: text(v.refundCap),
     maxStake: text(v.maxStake),
   };
+}
+
+const indices = (v: unknown, count: number): number[] =>
+  Array.isArray(v)
+    ? [...new Set(v.filter((c): c is number => Number.isInteger(c) && c >= 0 && c < count))].sort()
+    : [];
+
+function readBet(v: unknown, outcomeCount: number): BetInput | undefined {
+  if (!isObject(v)) return undefined;
+  const covers = indices(v.covers, outcomeCount);
+  return { ...readFields(v), covers: covers.length > 0 ? covers : [0] };
 }
 
 function readState(v: unknown): UiState | undefined {
@@ -49,27 +58,44 @@ function readState(v: unknown): UiState | undefined {
   return { outcomes, bets: bets as BetInput[] };
 }
 
+function readHedge(v: unknown): HedgeState | undefined {
+  if (!isObject(v) || !isObject(v.boost)) return undefined;
+  const hedges: HedgeState['hedges'] = {};
+  if (isObject(v.hedges)) {
+    for (const [key, h] of Object.entries(v.hedges)) {
+      if (isObject(h)) hedges[key] = { odds: text(h.odds), tax: h.tax === true };
+    }
+  }
+  return {
+    home: text(v.home),
+    away: text(v.away),
+    line: text(v.line, initialHedge.line),
+    results: indices(v.results, 3),
+    goals: (GOALS.includes(text(v.goals)) ? v.goals : 'ueber') as Goals,
+    boost: readFields(v.boost),
+    hedges,
+    selected: text(v.selected),
+  };
+}
+
 /** Liest den gespeicherten Stand; kaputte oder fehlende Daten ergeben den Standard. */
 export function load(store: Store | undefined): Saved {
-  const empty: Saved = { settings: { ...defaultSettings }, taxByProvider: {} };
+  const empty: Saved = { tab: 'absichern', settings: { ...defaultSettings } };
   try {
     const raw = store?.getItem(KEY);
     if (!raw) return empty;
     const data: unknown = JSON.parse(raw);
     if (!isObject(data)) return empty;
     const s = isObject(data.settings) ? data.settings : {};
-    const taxByProvider: Record<string, boolean> = {};
-    if (isObject(data.taxByProvider)) {
-      for (const [k, val] of Object.entries(data.taxByProvider)) if (typeof val === 'boolean') taxByProvider[k] = val;
-    }
     return {
+      tab: data.tab === 'frei' ? 'frei' : 'absichern',
       state: readState(data.state),
+      hedge: readHedge(data.hedge),
       settings: {
         taxPercent: text(s.taxPercent, defaultSettings.taxPercent),
         conversionPercent: text(s.conversionPercent, defaultSettings.conversionPercent),
         budget: text(s.budget, defaultSettings.budget),
       },
-      taxByProvider,
     };
   } catch {
     return empty;
@@ -83,20 +109,4 @@ export function save(store: Store | undefined, saved: Saved): void {
   } catch {
     /* ohne Speicher läuft die Seite einfach ohne Merken weiter */
   }
-}
-
-/** Setzt den Anbieternamen und übernimmt den gemerkten Steuer-Schalter, falls es einen gibt. */
-export function withProvider(bet: BetInput, name: string, taxByProvider: Record<string, boolean>): BetInput {
-  const remembered = taxByProvider[providerKey(name)];
-  return { ...bet, provider: name, tax: remembered ?? bet.tax };
-}
-
-/** Merkt den Steuer-Schalter für den Anbieter der Wette (ohne Namen passiert nichts). */
-export function rememberTax(
-  taxByProvider: Record<string, boolean>,
-  provider: string,
-  tax: boolean,
-): Record<string, boolean> {
-  const key = providerKey(provider);
-  return key === '' ? taxByProvider : { ...taxByProvider, [key]: tax };
 }
