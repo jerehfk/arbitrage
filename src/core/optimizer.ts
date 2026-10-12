@@ -34,7 +34,13 @@ export interface Plan {
 const TOL = 1e-7;
 
 /** Wählt die freien Einsätze so, dass der schlechteste Ausgang möglichst gut ausfällt. */
-export function optimize(legs: Leg[], outcomeCount: number, settings: Settings): Plan {
+export function optimize(
+  legs: Leg[],
+  outcomeCount: number,
+  settings: Settings,
+  /** Obergrenze für das Bargeld aller freien Wetten, z. B. wenn kein Einsatz fest ist. */
+  budget?: number,
+): Plan {
   const { taxRate, conversionRate } = settings;
   if (outcomeCount < 1) throw new Error('Mindestens ein Ausgang nötig');
   for (const leg of legs) {
@@ -108,6 +114,13 @@ export function optimize(legs: Leg[], outcomeCount: number, settings: Settings):
         capRhs.push(refundCap);
       }
     }
+  }
+
+  if (budget !== undefined) {
+    const row = new Array<number>(n).fill(0);
+    for (const li of free) if (legs[li].bet.type !== 'gratiswette') row[xIdx.get(li)!] = 1;
+    capRows.push(row);
+    capRhs.push(budget);
   }
 
   const finish = (stakes: number[], status: Plan['status']): Plan => {
