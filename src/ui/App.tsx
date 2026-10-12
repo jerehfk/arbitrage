@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { formatEuro, formatGain, formatPlain } from './format';
 import { calculate, emptyBet, type BetInput, type UiState } from './model';
 import { defaultSettings, resolveSettings, type UiSettings } from './settings';
@@ -40,11 +40,19 @@ export function App() {
   const [ui, setUi] = useState<UiSettings>(saved.settings);
   const [taxByProvider, setTaxByProvider] = useState(saved.taxByProvider);
   const [showSettings, setShowSettings] = useState(false);
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const resolved = useMemo(() => resolveSettings(ui), [ui]);
   const calc = useMemo(
     () => calculate(state, resolved.settings, resolved.budget),
     [state, resolved],
   );
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if (showSettings && !dialog.open) dialog.showModal();
+    if (!showSettings && dialog.open) dialog.close();
+  }, [showSettings]);
 
   useEffect(() => {
     save(getStore(), { state, settings: ui, taxByProvider });
@@ -81,17 +89,29 @@ export function App() {
         <button
           class="icon gear"
           aria-label="Einstellungen"
-          aria-expanded={showSettings}
-          aria-controls="settings"
-          onClick={() => setShowSettings((v) => !v)}
+          aria-haspopup="dialog"
+          onClick={() => setShowSettings(true)}
         >
           {'\u2699\uFE0E'}
         </button>
       </header>
 
-      {showSettings && (
-        <section id="settings" class="settings" aria-labelledby="h-settings">
-          <h2 id="h-settings">Einstellungen</h2>
+      <dialog
+        ref={dialogRef}
+        class="settings"
+        aria-labelledby="h-settings"
+        onClose={() => setShowSettings(false)}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) setShowSettings(false);
+        }}
+      >
+        <div class="sheet">
+          <div class="sheet-head">
+            <h2 id="h-settings">Einstellungen</h2>
+            <button class="icon" aria-label="Einstellungen schließen" onClick={() => setShowSettings(false)}>
+              ×
+            </button>
+          </div>
           <div class="fields">
             <label>
               <span>Wettsteuer in %</span>
@@ -114,7 +134,7 @@ export function App() {
               {resolved.errors.conversionPercent && <em class="error">{resolved.errors.conversionPercent}</em>}
             </label>
             <label>
-              <span>Gesamteinsatz ohne festen Einsatz in €</span>
+              <span>Start-Gesamteinsatz in €</span>
               <input
                 inputMode="decimal"
                 aria-invalid={resolved.errors.budget ? 'true' : undefined}
@@ -132,8 +152,8 @@ export function App() {
               Eingaben zurücksetzen
             </button>
           </div>
-        </section>
-      )}
+        </div>
+      </dialog>
 
       <main class="layout">
         <div class="inputs">

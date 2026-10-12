@@ -60,11 +60,36 @@ h1 {
 }
 
 .settings {
-  padding: 12px;
-  margin-bottom: 24px;
+  width: min(640px, calc(100% - 32px));
+  max-height: calc(100% - 32px);
+  padding: 0;
+  color: var(--ink);
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 14px;
+  box-shadow: 0 20px 60px rgb(0 0 0 / 0.35);
+}
+
+.settings::backdrop {
+  background: rgb(0 0 0 / 0.55);
+  backdrop-filter: blur(2px);
+}
+
+.sheet {
+  padding: 8px 16px 16px;
+}
+
+.sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.sheet-head h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--ink);
 }
 
 .settings .fields {
@@ -484,6 +509,7 @@ input[role='switch']:checked::after {
 
 @media (min-width: 640px) {
   .settings .fields {
+    align-items: start;
     grid-template-columns: repeat(3, 1fr);
   }
 
