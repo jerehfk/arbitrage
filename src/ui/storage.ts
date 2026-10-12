@@ -59,22 +59,13 @@ function readState(v: unknown): UiState | undefined {
 }
 
 function readHedge(v: unknown): HedgeState | undefined {
-  if (!isObject(v) || !isObject(v.boost)) return undefined;
-  const hedges: HedgeState['hedges'] = {};
-  if (isObject(v.hedges)) {
-    for (const [key, h] of Object.entries(v.hedges)) {
-      if (isObject(h)) hedges[key] = { odds: text(h.odds), tax: h.tax === true };
-    }
-  }
+  if (!isObject(v)) return undefined;
   return {
     home: text(v.home),
     away: text(v.away),
     line: text(v.line, initialHedge.line),
     results: indices(v.results, 3),
     goals: (GOALS.includes(text(v.goals)) ? v.goals : 'ueber') as Goals,
-    boost: readFields(v.boost),
-    hedges,
-    selected: text(v.selected),
   };
 }
 
