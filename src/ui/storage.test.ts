@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { initialHedge } from './hedgeModel';
-import { emptyBet } from './model';
+import { emptyBet, emptyFields } from './model';
 import { defaultSettings } from './settings';
 import { load, save } from './storage';
 
@@ -32,8 +32,10 @@ describe('load und save', () => {
       ...initialHedge,
       home: 'Atlético',
       text: 'Atlético gewinnt & über 2,5 Tore',
+      own: { ...emptyFields(), type: 'gratiswette' as const, odds: '4', stake: '3' },
+      quotes: { 'R:DA': { odds: '1,5', tax: true } },
     };
-    const settings = { taxPercent: '5', conversionPercent: '70', budget: '200' };
+    const settings = { taxPercent: '5', conversionPercent: '70', budget: '200', commissionPercent: '2' };
     save(store, { tab: 'frei', state, hedge, settings });
     expect(load(store)).toEqual({ tab: 'frei', state, hedge, settings });
   });
@@ -63,7 +65,7 @@ describe('load und save', () => {
     const saved = load(memory(raw));
     expect(saved.state?.bets[0].covers).toEqual([0]);
     expect(saved.state?.bets[0].type).toBe('normal');
-    expect(saved.hedge).toEqual({ home: '', away: '', text: 'x' });
+    expect(saved.hedge).toEqual({ ...initialHedge, text: 'x' });
   });
 
   test('ohne Speicher oder bei Fehler: kein Absturz', () => {

@@ -661,3 +661,40 @@ input[role='switch']:checked::after {
 .bet .wide {
   grid-column: 1 / -1;
 }
+
+.options .q {
+  width: 130px;
+}
+
+.options .q input:not([role='switch']) {
+  width: 100%;
+}
+
+.options .q .tax {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.options .num {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.options th:nth-child(n + 2) {
+  text-align: right;
+}
+
+.hedges h3 {
+  margin: 20px 0 0;
+  font-size: 0.95rem;
+}
+
+.options.small td {
+  padding: 6px 12px;
+}

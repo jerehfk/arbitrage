@@ -105,6 +105,16 @@ export function App() {
               />
               {resolved.errors.budget && <em class="error">{resolved.errors.budget}</em>}
             </label>
+            <label>
+              <span>Provision der Gegenseite in %</span>
+              <input
+                inputMode="decimal"
+                aria-invalid={resolved.errors.commissionPercent ? 'true' : undefined}
+                value={ui.commissionPercent}
+                onInput={(e) => setUi({ ...ui, commissionPercent: e.currentTarget.value })}
+              />
+              {resolved.errors.commissionPercent && <em class="error">{resolved.errors.commissionPercent}</em>}
+            </label>
           </div>
           <div class="actions">
             <button class="add" onClick={() => setUi({ ...defaultSettings })}>
@@ -118,7 +128,7 @@ export function App() {
       </dialog>
 
       {tab === 'absichern' ? (
-        <HedgeTab state={hedge} setState={setHedge} />
+        <HedgeTab state={hedge} setState={setHedge} resolved={resolved} />
       ) : (
         <FreeTab state={free} setState={setFree} settings={resolved.settings} budget={resolved.budget} />
       )}

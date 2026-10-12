@@ -62,7 +62,18 @@ function readHedge(v: unknown): HedgeState | undefined {
     home: text(v.home),
     away: text(v.away),
     text: text(v.text),
+    own: isObject(v.own) ? readFields(v.own) : emptyFields(),
+    quotes: readQuotes(v.quotes),
   };
+}
+
+function readQuotes(v: unknown): HedgeState['quotes'] {
+  const quotes: HedgeState['quotes'] = {};
+  if (!isObject(v)) return quotes;
+  for (const [key, q] of Object.entries(v)) {
+    if (isObject(q)) quotes[key] = { odds: text(q.odds), tax: q.tax === true };
+  }
+  return quotes;
 }
 
 /** Liest den gespeicherten Stand; kaputte oder fehlende Daten ergeben den Standard. */
@@ -82,6 +93,7 @@ export function load(store: Store | undefined): Saved {
         taxPercent: text(s.taxPercent, defaultSettings.taxPercent),
         conversionPercent: text(s.conversionPercent, defaultSettings.conversionPercent),
         budget: text(s.budget, defaultSettings.budget),
+        commissionPercent: text(s.commissionPercent, defaultSettings.commissionPercent),
       },
     };
   } catch {
