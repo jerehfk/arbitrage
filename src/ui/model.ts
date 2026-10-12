@@ -8,8 +8,8 @@ export interface BetInput {
   odds: string;
   /** Leer: der Rechner bestimmt den Einsatz. */
   stake: string;
-  /** Index des Ausgangs, bei dem die Wette gewinnt. */
-  covers: number;
+  /** Indizes der Ausgänge, bei denen die Wette gewinnt (mindestens einer). */
+  covers: number[];
   /** Wettsteuer auf den Gewinn dieser Wette abziehen. */
   tax: boolean;
   /** Nur bei risikofrei: Erstattung als Bargeld oder Gratiswette. */
@@ -26,6 +26,7 @@ export interface UiState {
 }
 
 export interface BetErrors {
+  covers?: string;
   odds?: string;
   stake?: string;
   refundCap?: string;
@@ -50,7 +51,7 @@ export const emptyBet = (covers: number): BetInput => ({
   type: 'normal',
   odds: '',
   stake: '',
-  covers,
+  covers: [covers],
   tax: false,
   refundKind: 'bar',
   refundCap: '',
@@ -83,7 +84,9 @@ export function calculate(state: UiState, settings: Settings): Calculation {
     const maxStake = bet.type === 'boost' ? optionalPositive(bet.maxStake) : undefined;
     if (maxStake === null) errors[i].maxStake = 'Der Max-Einsatz muss größer als 0 sein.';
 
-    if (odds !== null && odds > 1 && fixed !== null && refundCap !== null && maxStake !== null) {
+    if (bet.covers.length === 0) errors[i].covers = 'Wähle mindestens einen Ausgang.';
+
+    if (bet.covers.length > 0 && odds !== null && odds > 1 && fixed !== null && refundCap !== null && maxStake !== null) {
       legs.push({
         bet: {
           type: bet.type,
@@ -93,7 +96,7 @@ export function calculate(state: UiState, settings: Settings): Calculation {
           refundCap,
           maxStake,
         },
-        covers: [bet.covers],
+        covers: bet.covers,
         stake: fixed,
       });
       used.push(i);
