@@ -19,6 +19,12 @@ const initial: UiState = {
   bets: [emptyBet(0), emptyBet(1), emptyBet(2)],
 };
 
+/** Entfernt Ausgang k aus der Auswahl und rückt die höheren Indizes nach. */
+function remap(covers: number[], k: number): number[] {
+  const next = covers.filter((c) => c !== k).map((c) => (c > k ? c - 1 : c));
+  return next.length > 0 ? next : [0];
+}
+
 export function App() {
   const [state, setState] = useState<UiState>(initial);
   const calc = useMemo(() => calculate(state, SETTINGS), [state]);
@@ -33,7 +39,7 @@ export function App() {
   const removeOutcome = (k: number) =>
     setState((s) => ({
       outcomes: s.outcomes.filter((_, i) => i !== k),
-      bets: s.bets.map((b) => ({ ...b, covers: b.covers === k ? 0 : b.covers > k ? b.covers - 1 : b.covers })),
+      bets: s.bets.map((b) => ({ ...b, covers: remap(b.covers, k) })),
     }));
 
   const setBet = (i: number, patch: Partial<BetInput>) =>
@@ -101,16 +107,27 @@ export function App() {
                         ))}
                       </select>
                     </label>
-                    <label class="f-covers">
-                      <span>Gewinnt bei</span>
-                      <select value={bet.covers} onChange={(e) => setBet(i, { covers: Number(e.currentTarget.value) })}>
-                        {state.outcomes.map((_, k) => (
-                          <option value={k} key={k}>
-                            {outcomeName(k)}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+                    <fieldset class="f-covers">
+                      <legend>Gewinnt bei</legend>
+                      <div class="chips">
+                        {state.outcomes.map((_, k) => {
+                          const on = bet.covers.includes(k);
+                          return (
+                            <label class={on ? 'chip on' : 'chip'} key={k}>
+                              <input
+                                type="checkbox"
+                                checked={on}
+                                onChange={() => {
+                                  const next = on ? bet.covers.filter((c) => c !== k) : [...bet.covers, k].sort();
+                                  if (next.length > 0) setBet(i, { covers: next });
+                                }}
+                              />
+                              <span>{outcomeName(k)}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </fieldset>
                     <div class="f-odds">
                       <label>
                         <span>Quote</span>

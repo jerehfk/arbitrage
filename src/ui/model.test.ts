@@ -12,11 +12,33 @@ function state(bets: BetInput[], outcomes = ['A', 'B']): UiState {
 }
 
 describe('calculate', () => {
+  test('Wette auf mehrere Ausgänge (Doppelte Chance)', () => {
+    const calc = calculate(
+      state(
+        [
+          bet({ odds: '1,5', stake: '100', covers: [0, 1] }),
+          bet({ odds: '4', covers: [2] }),
+        ],
+        ['1', 'X', '2'],
+      ),
+      settings,
+    );
+    expect(calc.stakeHints[1]).toBeCloseTo(37.5, 4);
+    expect(calc.plan?.minValue).toBeCloseTo(12.5, 4);
+    expect(calc.plan?.equal).toBe(true);
+  });
+
+  test('ohne Ausgang: Fehler', () => {
+    const calc = calculate(state([bet({ odds: '2', covers: [] })]), settings);
+    expect(calc.errors[0].covers).toMatch(/mindestens/);
+    expect(calc.plan).toBeUndefined();
+  });
+
   test('Arbitrage: ein Einsatz fest, der andere wird berechnet', () => {
     const calc = calculate(
       state([
-        bet({ provider: 'Tipico', odds: '2,10', stake: '100', covers: 0 }),
-        bet({ provider: 'bet365', odds: '2.1', stake: '', covers: 1 }),
+        bet({ provider: 'Tipico', odds: '2,10', stake: '100', covers: [0] }),
+        bet({ provider: 'bet365', odds: '2.1', stake: '', covers: [1] }),
       ]),
       settings,
     );
@@ -30,8 +52,8 @@ describe('calculate', () => {
   test('ohne festen Einsatz bei Arbitrage: rechnet mit 100 € Gesamteinsatz', () => {
     const calc = calculate(
       state([
-        bet({ provider: '', odds: '2,1', stake: '', covers: 0 }),
-        bet({ provider: '', odds: '2,1', stake: '', covers: 1 }),
+        bet({ provider: '', odds: '2,1', stake: '', covers: [0] }),
+        bet({ provider: '', odds: '2,1', stake: '', covers: [1] }),
       ]),
       settings,
     );
@@ -46,8 +68,8 @@ describe('calculate', () => {
   test('mit festem Einsatz gilt der Gesamteinsatz nicht', () => {
     const calc = calculate(
       state([
-        bet({ odds: '2,1', stake: '10', covers: 0 }),
-        bet({ odds: '2,1', stake: '', covers: 1 }),
+        bet({ odds: '2,1', stake: '10', covers: [0] }),
+        bet({ odds: '2,1', stake: '', covers: [1] }),
       ]),
       settings,
     );
@@ -58,8 +80,8 @@ describe('calculate', () => {
   test('ohne Arbitrage und ohne festen Einsatz: Hinweis', () => {
     const calc = calculate(
       state([
-        bet({ provider: '', odds: '1,5', stake: '', covers: 0 }),
-        bet({ provider: '', odds: '1,5', stake: '', covers: 1 }),
+        bet({ provider: '', odds: '1,5', stake: '', covers: [0] }),
+        bet({ provider: '', odds: '1,5', stake: '', covers: [1] }),
       ]),
       settings,
     );
@@ -69,8 +91,8 @@ describe('calculate', () => {
   test('ungültige Quote wird markiert und nicht gerechnet', () => {
     const calc = calculate(
       state([
-        bet({ provider: '', odds: '1', stake: '10', covers: 0 }),
-        bet({ provider: '', odds: '2', stake: '', covers: 1 }),
+        bet({ provider: '', odds: '1', stake: '10', covers: [0] }),
+        bet({ provider: '', odds: '2', stake: '', covers: [1] }),
       ]),
       settings,
     );
@@ -79,12 +101,12 @@ describe('calculate', () => {
   });
 
   test('ungültiger Einsatz wird markiert', () => {
-    const calc = calculate(state([bet({ provider: '', odds: '2', stake: '-5', covers: 0 })]), settings);
+    const calc = calculate(state([bet({ provider: '', odds: '2', stake: '-5', covers: [0] })]), settings);
     expect(calc.errors[0].stake).toBeDefined();
   });
 
   test('nichts eingetragen', () => {
-    const calc = calculate(state([bet({ provider: '', odds: '', stake: '', covers: 0 })]), settings);
+    const calc = calculate(state([bet({ provider: '', odds: '', stake: '', covers: [0] })]), settings);
     expect(calc.plan).toBeUndefined();
     expect(calc.hint).toBe('Trage die Quoten ein.');
   });
@@ -92,8 +114,8 @@ describe('calculate', () => {
   test('Gratiswette: nur der Gewinn zählt, Gegenwette gleicht aus', () => {
     const calc = calculate(
       state([
-        bet({ type: 'gratiswette', odds: '5', stake: '10', covers: 0 }),
-        bet({ odds: '1,8', covers: 1 }),
+        bet({ type: 'gratiswette', odds: '5', stake: '10', covers: [0] }),
+        bet({ odds: '1,8', covers: [1] }),
       ]),
       settings,
     );
@@ -105,9 +127,9 @@ describe('calculate', () => {
     const calc = calculate(
       state(
         [
-          bet({ type: 'risikofrei', odds: '2,2', stake: '5', covers: 0, refundKind: 'gratiswette' }),
-          bet({ odds: '2,05', covers: 2 }),
-          bet({ odds: '6', covers: 1 }),
+          bet({ type: 'risikofrei', odds: '2,2', stake: '5', covers: [0], refundKind: 'gratiswette' }),
+          bet({ odds: '2,05', covers: [2] }),
+          bet({ odds: '6', covers: [1] }),
         ],
         ['Bet Builder', 'Dt. gewinnt unter 2,5', '1X'],
       ),
@@ -123,7 +145,7 @@ describe('calculate', () => {
 
   test('Steuer-Schalter einer Wette senkt den Gewinn', () => {
     const calc = calculate(
-      state([bet({ odds: '2,5', stake: '100', covers: 0, tax: true }), bet({ odds: '1,8', covers: 1 })]),
+      state([bet({ odds: '2,5', stake: '100', covers: [0], tax: true }), bet({ odds: '1,8', covers: [1] })]),
       settings,
     );
     expect(calc.stakeHints[1]).toBeCloseTo(134.472, 3);
@@ -132,7 +154,7 @@ describe('calculate', () => {
 
   test('Quotenboost mit Max-Einsatz', () => {
     const calc = calculate(
-      state([bet({ type: 'boost', odds: '3', covers: 0, maxStake: '10' }), bet({ odds: '1,9', covers: 1 })]),
+      state([bet({ type: 'boost', odds: '3', covers: [0], maxStake: '10' }), bet({ odds: '1,9', covers: [1] })]),
       settings,
     );
     expect(calc.stakeHints[0]).toBeCloseTo(10, 6);
@@ -142,9 +164,9 @@ describe('calculate', () => {
   test('Höchstbetrag und Max-Einsatz werden nur beim passenden Typ geprüft', () => {
     const calc = calculate(
       state([
-        bet({ type: 'risikofrei', odds: '2', stake: '5', covers: 0, refundCap: '0' }),
-        bet({ type: 'boost', odds: '2', covers: 1, maxStake: '-1' }),
-        bet({ type: 'normal', odds: '2', covers: 1, refundCap: 'x', maxStake: 'x' }),
+        bet({ type: 'risikofrei', odds: '2', stake: '5', covers: [0], refundCap: '0' }),
+        bet({ type: 'boost', odds: '2', covers: [1], maxStake: '-1' }),
+        bet({ type: 'normal', odds: '2', covers: [1], refundCap: 'x', maxStake: 'x' }),
       ]),
       settings,
     );
