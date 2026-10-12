@@ -66,7 +66,7 @@ function optionalPositive(text: string): number | undefined | null {
 }
 
 /** Übersetzt die Eingaben der Oberfläche in eine Rechnung des Kerns. */
-export function calculate(state: UiState, settings: Settings): Calculation {
+export function calculate(state: UiState, settings: Settings, defaultBudget = DEFAULT_BUDGET): Calculation {
   const errors: BetErrors[] = state.bets.map(() => ({}));
   const stakeHints: (number | undefined)[] = state.bets.map(() => undefined);
   const legs: Leg[] = [];
@@ -106,7 +106,7 @@ export function calculate(state: UiState, settings: Settings): Calculation {
   if (legs.length === 0) return { errors, stakeHints, hint: 'Trage die Quoten ein.' };
 
   const nothingFixed = legs.every((leg) => leg.stake === undefined);
-  const budget = nothingFixed ? DEFAULT_BUDGET : undefined;
+  const budget = nothingFixed ? defaultBudget : undefined;
   const plan = optimize(legs, state.outcomes.length, settings, budget);
   used.forEach((betIndex, legIndex) => {
     if (legs[legIndex].stake === undefined) stakeHints[betIndex] = plan.stakes[legIndex];

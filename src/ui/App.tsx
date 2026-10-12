@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'preact/hooks';
+import { useEffect, useMemo, useState } from 'preact/hooks';
 import { formatEuro, formatGain, formatPlain } from './format';
 import { calculate, emptyBet, type BetInput, type UiState } from './model';
+import { defaultSettings, resolveSettings, type UiSettings } from './settings';
+import { load, rememberTax, save, withProvider } from './storage';
 
-const SETTINGS = { taxRate: 0.053, conversionRate: 0.6 };
 const MAX_OUTCOMES = 5;
 const MIN_OUTCOMES = 2;
 const MAX_BETS = 10;
@@ -25,9 +26,30 @@ function remap(covers: number[], k: number): number[] {
   return next.length > 0 ? next : [0];
 }
 
+function getStore(): Storage | undefined {
+  try {
+    return window.localStorage;
+  } catch {
+    return undefined;
+  }
+}
+
 export function App() {
-  const [state, setState] = useState<UiState>(initial);
-  const calc = useMemo(() => calculate(state, SETTINGS), [state]);
+  const [saved] = useState(() => load(getStore()));
+  const [state, setState] = useState<UiState>(saved.state ?? initial);
+  const [ui, setUi] = useState<UiSettings>(saved.settings);
+  const [taxByProvider, setTaxByProvider] = useState(saved.taxByProvider);
+  const [showSettings, setShowSettings] = useState(false);
+  const resolved = useMemo(() => resolveSettings(ui), [ui]);
+  const calc = useMemo(
+    () => calculate(state, resolved.settings, resolved.budget),
+    [state, resolved],
+  );
+
+  useEffect(() => {
+    save(getStore(), { state, settings: ui, taxByProvider });
+  }, [state, ui, taxByProvider]);
+
   const outcomeName = (k: number) => state.outcomes[k].trim() || `Ausgang ${k + 1}`;
 
   const setOutcome = (k: number, name: string) =>
@@ -54,9 +76,64 @@ export function App() {
 
   return (
     <div class="page">
-      <header>
+      <header class="top">
         <h1>Sportwetten-Rechner</h1>
+        <button
+          class="icon gear"
+          aria-label="Einstellungen"
+          aria-expanded={showSettings}
+          aria-controls="settings"
+          onClick={() => setShowSettings((v) => !v)}
+        >
+          {'\u2699\uFE0E'}
+        </button>
       </header>
+
+      {showSettings && (
+        <section id="settings" class="settings" aria-labelledby="h-settings">
+          <h2 id="h-settings">Einstellungen</h2>
+          <div class="fields">
+            <label>
+              <span>Wettsteuer in %</span>
+              <input
+                inputMode="decimal"
+                aria-invalid={resolved.errors.taxPercent ? 'true' : undefined}
+                value={ui.taxPercent}
+                onInput={(e) => setUi({ ...ui, taxPercent: e.currentTarget.value })}
+              />
+              {resolved.errors.taxPercent && <em class="error">{resolved.errors.taxPercent}</em>}
+            </label>
+            <label>
+              <span>Wert einer Gratiswette in %</span>
+              <input
+                inputMode="decimal"
+                aria-invalid={resolved.errors.conversionPercent ? 'true' : undefined}
+                value={ui.conversionPercent}
+                onInput={(e) => setUi({ ...ui, conversionPercent: e.currentTarget.value })}
+              />
+              {resolved.errors.conversionPercent && <em class="error">{resolved.errors.conversionPercent}</em>}
+            </label>
+            <label>
+              <span>Gesamteinsatz ohne festen Einsatz in €</span>
+              <input
+                inputMode="decimal"
+                aria-invalid={resolved.errors.budget ? 'true' : undefined}
+                value={ui.budget}
+                onInput={(e) => setUi({ ...ui, budget: e.currentTarget.value })}
+              />
+              {resolved.errors.budget && <em class="error">{resolved.errors.budget}</em>}
+            </label>
+          </div>
+          <div class="actions">
+            <button class="add" onClick={() => setUi({ ...defaultSettings })}>
+              Einstellungen zurücksetzen
+            </button>
+            <button class="add" onClick={() => setState(initial)}>
+              Eingaben zurücksetzen
+            </button>
+          </div>
+        </section>
+      )}
 
       <main class="layout">
         <div class="inputs">
@@ -95,7 +172,13 @@ export function App() {
                   <li class="bet" key={i}>
                     <label class="f-provider">
                       <span>Anbieter</span>
-                      <input value={bet.provider} onInput={(e) => setBet(i, { provider: e.currentTarget.value })} />
+                      <input value={bet.provider} onInput={(e) => {
+                          const name = e.currentTarget.value;
+                          setState((st) => ({
+                            ...st,
+                            bets: st.bets.map((b, j) => (j === i ? withProvider(b, name, taxByProvider) : b)),
+                          }));
+                        }} />
                     </label>
                     <label class="f-type">
                       <span>Art</span>
@@ -143,7 +226,11 @@ export function App() {
                           type="checkbox"
                           role="switch"
                           checked={bet.tax}
-                          onChange={(e) => setBet(i, { tax: e.currentTarget.checked })}
+                          onChange={(e) => {
+                            const tax = e.currentTarget.checked;
+                            setBet(i, { tax });
+                            setTaxByProvider((m) => rememberTax(m, bet.provider, tax));
+                          }}
                         />
                         <span>Steuer</span>
                       </label>
@@ -234,7 +321,7 @@ export function App() {
                     {o.freebet > 0.004 && (
                       <span class="detail">
                         {formatGain(o.cash)} bar, dazu {formatEuro(o.freebet)} Gratiswette (Wert{' '}
-                        {formatEuro(o.freebet * SETTINGS.conversionRate)})
+                        {formatEuro(o.freebet * resolved.settings.conversionRate)})
                       </span>
                     )}
                     <span class="track" aria-hidden="true">

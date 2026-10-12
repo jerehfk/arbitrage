@@ -43,9 +43,51 @@ body {
 }
 
 h1 {
-  margin: 0 0 16px;
+  margin: 0;
   font-size: 1.35rem;
   font-weight: 650;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.gear {
+  font-size: 1.5rem;
+}
+
+.settings {
+  padding: 12px;
+  margin-bottom: 24px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.settings .fields {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.settings label {
+  display: block;
+}
+
+.settings label > span {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.settings .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 h2 {
@@ -441,6 +483,10 @@ input[role='switch']:checked::after {
 }
 
 @media (min-width: 640px) {
+  .settings .fields {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
   .bet {
     grid-template-columns: repeat(6, 1fr);
     padding-right: 52px;
