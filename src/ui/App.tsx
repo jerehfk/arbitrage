@@ -118,7 +118,7 @@ export function App() {
       </dialog>
 
       {tab === 'absichern' ? (
-        <HedgeTab state={hedge} setState={setHedge} settings={resolved.settings} budget={resolved.budget} />
+        <HedgeTab state={hedge} setState={setHedge} />
       ) : (
         <FreeTab state={free} setState={setFree} settings={resolved.settings} budget={resolved.budget} />
       )}

@@ -590,6 +590,7 @@ input[role='switch']:checked::after {
 
 /* Absichern */
 .game {
+  grid-column: 1 / -1;
   display: grid;
   grid-template-columns: 1fr 1fr 90px;
   gap: 8px 10px;
@@ -614,44 +615,40 @@ input[role='switch']:checked::after {
 }
 
 .options {
-  display: grid;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.option {
-  padding: 10px 12px;
+  width: 100%;
+  margin-top: 8px;
+  border-collapse: collapse;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
 }
 
-.option.on {
-  border-color: var(--accent);
+.options th {
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-align: left;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
 }
 
-.option-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 36px;
+.options td {
+  padding: 10px 12px;
+  vertical-align: top;
+  border-top: 1px solid var(--line);
+}
+
+.options tbody tr:first-child td {
+  border-top: 0;
+}
+
+.options td:first-child {
+  width: 64px;
   font-weight: 600;
 }
 
-.option-head input {
-  width: 18px;
-  min-height: 0;
-  height: 18px;
-  accent-color: var(--accent);
-}
-
-.leg {
-  padding: 8px 0;
-  border-top: 1px dashed var(--line);
-}
-
-.leg-name {
-  margin: 0 0 4px;
+.options ul li + li {
+  margin-top: 4px;
 }
 
 .badge {
@@ -661,48 +658,6 @@ input[role='switch']:checked::after {
   color: var(--muted);
   border: 1px solid var(--line);
   border-radius: 6px;
-}
-
-.leg-fields {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 4px 12px;
-}
-
-.leg-fields label:first-child {
-  width: 90px;
-}
-
-.leg-fields label > span {
-  display: block;
-  font-size: 0.8rem;
-  color: var(--muted);
-}
-
-.leg-fields .tax {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  cursor: pointer;
-}
-
-.leg-fields .tax > span {
-  display: inline;
-  font-size: 0.9rem;
-  color: var(--ink);
-}
-
-.leg-stake {
-  margin: 0 0 0 auto;
-  text-align: right;
-}
-
-.leg-stake span {
-  display: block;
-  font-size: 0.8rem;
-  color: var(--muted);
 }
 
 @media (prefers-reduced-motion: reduce) {
