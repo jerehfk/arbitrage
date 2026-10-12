@@ -2,7 +2,6 @@ import {
   describeMarket,
   isCombo,
   marketCells,
-  marketKey,
   suggestHedges,
   type Goals,
   type Names,
@@ -32,32 +31,24 @@ export interface HedgeLeg {
   combo: boolean;
 }
 
-export interface HedgeOption {
-  id: string;
+export interface HedgeBest {
   legs: HedgeLeg[];
 }
 
 export interface HedgeCalculation {
   boostLabel: string;
-  options: HedgeOption[];
+  /** Die beste Absicherung: wenige Wetten, keine doppelt abgedeckten Fälle, wenige Kombi-Wetten. */
+  best?: HedgeBest;
   hint?: string;
 }
 
-/** Absicherungen für die eigene Wette: Mengen von Wetten, die alle übrigen Fälle abdecken, wenige zuerst. */
+/** Beste Absicherung für die eigene Wette: eine Menge von Wetten, die alle übrigen Fälle abdeckt. */
 export function calculateHedge(state: HedgeState): HedgeCalculation {
   const names: Names = { home: state.home, away: state.away, line: state.line };
-  if (state.results.length === 0) return { boostLabel: '', options: [], hint: 'Wähle mindestens ein Ergebnis.' };
+  if (state.results.length === 0) return { boostLabel: '', hint: 'Wähle mindestens ein Ergebnis.' };
   const market = { results: state.results, goals: state.goals };
   const boostLabel = describeMarket(market, names);
-  const suggestions = suggestHedges(marketCells(market));
-  if (suggestions.length === 0) {
-    return { boostLabel, options: [], hint: 'Diese Wette deckt schon alle Fälle ab, es gibt nichts abzusichern.' };
-  }
-  return {
-    boostLabel,
-    options: suggestions.map((markets) => ({
-      id: markets.map(marketKey).join('+'),
-      legs: markets.map((m) => ({ label: describeMarket(m, names), combo: isCombo(m) })),
-    })),
-  };
+  const [best] = suggestHedges(marketCells(market), 1);
+  if (!best) return { boostLabel, hint: 'Diese Wette deckt schon alle Fälle ab, es gibt nichts abzusichern.' };
+  return { boostLabel, best: { legs: best.map((m) => ({ label: describeMarket(m, names), combo: isCombo(m) })) } };
 }
