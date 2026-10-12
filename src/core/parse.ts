@@ -136,7 +136,7 @@ function parseClause(raw: string, names: Names): { market: Market; info: BetInfo
     if (n % 1 === 0.5) line = n;
     else if (n % 1 === 0) line = over ? (strict ? n + 0.5 : n - 0.5) : strict ? n - 0.5 : n + 0.5;
     else return undefined;
-    if (line < 0.5 || line > 4.5) return undefined;
+    if (line < 0.5 || line > 7.5) return undefined;
     others.push(goalsMarket(over, line));
     info.lines.push(line);
   }

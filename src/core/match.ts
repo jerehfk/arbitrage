@@ -2,7 +2,7 @@
  * Spielmodell für das Absichern: Ein Spiel ist ein Torverlauf (Tore je Team je Halbzeit, je 0 bis CAP,
  * CAP steht für "CAP oder mehr"). Jede Wette ist eine Bedingung auf diesen Verläufen ("Markt").
  */
-export const CAP = 5;
+export const CAP = 8;
 const SIDE = CAP + 1;
 export const CELL_COUNT = SIDE ** 4;
 

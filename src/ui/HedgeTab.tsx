@@ -73,7 +73,7 @@ export function HedgeTab({ state, setState }: Props) {
               </table>
               <p class="note">
                 Wenige Wetten, wenig doppelt abgedeckte Fälle, möglichst wenige Kombi-Wetten. Ungeprüft: ob es diese
-                Märkte beim Anbieter oder an der Börse gibt, weiß die App nicht. Grobe Annahme: höchstens 5 Tore pro Team
+                Märkte beim Anbieter oder an der Börse gibt, weiß die App nicht. Grobe Annahme: höchstens 8 Tore pro Team
                 und Halbzeit.
               </p>
             </>

@@ -67,3 +67,10 @@ describe('parseBet', () => {
     expect(label('Atlético gewinnt', { home: '', away: '' })).toBe('?Atlético gewinnt');
   });
 });
+
+describe('hohe Linien', () => {
+  test('bis 7,5 erlaubt, darüber nicht', () => {
+    expect(label('über 7,5 Tore')).toBe('Über 7,5 Tore');
+    expect(label('über 8,5 Tore')).toMatch(/^\?/);
+  });
+});
