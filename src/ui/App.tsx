@@ -1,13 +1,18 @@
 import { useMemo, useState } from 'preact/hooks';
 import { formatEuro, formatGain, formatPlain } from './format';
-import { calculate, type BetInput, type UiState } from './model';
+import { calculate, emptyBet, type BetInput, type UiState } from './model';
 
 const SETTINGS = { taxRate: 0.053, conversionRate: 0.6 };
 const MAX_OUTCOMES = 5;
 const MIN_OUTCOMES = 2;
 const MAX_BETS = 10;
 
-const emptyBet = (covers: number): BetInput => ({ provider: '', odds: '', stake: '', covers });
+const TYPES: { value: BetInput['type']; label: string }[] = [
+  { value: 'normal', label: 'Normal' },
+  { value: 'gratiswette', label: 'Gratiswette' },
+  { value: 'risikofrei', label: 'Risikofrei' },
+  { value: 'boost', label: 'Quotenboost' },
+];
 
 const initial: UiState = {
   outcomes: ['1', 'X', '2'],
@@ -86,6 +91,16 @@ export function App() {
                       <span>Anbieter</span>
                       <input value={bet.provider} onInput={(e) => setBet(i, { provider: e.currentTarget.value })} />
                     </label>
+                    <label class="f-type">
+                      <span>Art</span>
+                      <select value={bet.type} onChange={(e) => setBet(i, { type: e.currentTarget.value as BetInput['type'] })}>
+                        {TYPES.map((t) => (
+                          <option value={t.value} key={t.value}>
+                            {t.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
                     <label class="f-covers">
                       <span>Gewinnt bei</span>
                       <select value={bet.covers} onChange={(e) => setBet(i, { covers: Number(e.currentTarget.value) })}>
@@ -96,18 +111,29 @@ export function App() {
                         ))}
                       </select>
                     </label>
-                    <label class="f-odds">
-                      <span>Quote</span>
-                      <input
-                        inputMode="decimal"
-                        aria-invalid={err.odds ? 'true' : undefined}
-                        value={bet.odds}
-                        onInput={(e) => setBet(i, { odds: e.currentTarget.value })}
-                      />
+                    <div class="f-odds">
+                      <label>
+                        <span>Quote</span>
+                        <input
+                          inputMode="decimal"
+                          aria-invalid={err.odds ? 'true' : undefined}
+                          value={bet.odds}
+                          onInput={(e) => setBet(i, { odds: e.currentTarget.value })}
+                        />
+                      </label>
+                      <label class="tax">
+                        <input
+                          type="checkbox"
+                          role="switch"
+                          checked={bet.tax}
+                          onChange={(e) => setBet(i, { tax: e.currentTarget.checked })}
+                        />
+                        <span>Steuer</span>
+                      </label>
                       {err.odds && <em class="error">{err.odds}</em>}
-                    </label>
+                    </div>
                     <label class="f-stake">
-                      <span>Einsatz in €</span>
+                      <span>{bet.type === 'gratiswette' ? 'Gratiswette in €' : 'Einsatz in €'}</span>
                       <input
                         inputMode="decimal"
                         aria-invalid={err.stake ? 'true' : undefined}
@@ -117,6 +143,48 @@ export function App() {
                       />
                       {err.stake && <em class="error">{err.stake}</em>}
                     </label>
+                    {(bet.type === 'risikofrei' || bet.type === 'boost') && (
+                      <div class="extras">
+                        {bet.type === 'risikofrei' && (
+                          <>
+                            <label>
+                              <span>Erstattung als</span>
+                              <select
+                                value={bet.refundKind}
+                                onChange={(e) => setBet(i, { refundKind: e.currentTarget.value as BetInput['refundKind'] })}
+                              >
+                                <option value="bar">Bargeld</option>
+                                <option value="gratiswette">Gratiswette</option>
+                              </select>
+                            </label>
+                            <label>
+                              <span>Höchstbetrag in €</span>
+                              <input
+                                inputMode="decimal"
+                                placeholder="voller Einsatz"
+                                aria-invalid={err.refundCap ? 'true' : undefined}
+                                value={bet.refundCap}
+                                onInput={(e) => setBet(i, { refundCap: e.currentTarget.value })}
+                              />
+                              {err.refundCap && <em class="error">{err.refundCap}</em>}
+                            </label>
+                          </>
+                        )}
+                        {bet.type === 'boost' && (
+                          <label>
+                            <span>Max-Einsatz in €</span>
+                            <input
+                              inputMode="decimal"
+                              placeholder="unbegrenzt"
+                              aria-invalid={err.maxStake ? 'true' : undefined}
+                              value={bet.maxStake}
+                              onInput={(e) => setBet(i, { maxStake: e.currentTarget.value })}
+                            />
+                            {err.maxStake && <em class="error">{err.maxStake}</em>}
+                          </label>
+                        )}
+                      </div>
+                    )}
                     {state.bets.length > 1 && (
                       <button class="icon remove" aria-label={`Wette ${i + 1} entfernen`} onClick={() => removeBet(i)}>
                         ×
@@ -146,6 +214,12 @@ export function App() {
                   <li key={k}>
                     <span class="name">{outcomeName(k)}</span>
                     <span class={`val ${tone(o.value)}`}>{formatGain(o.value)}</span>
+                    {o.freebet > 0.004 && (
+                      <span class="detail">
+                        {formatGain(o.cash)} bar, dazu {formatEuro(o.freebet)} Gratiswette (Wert{' '}
+                        {formatEuro(o.freebet * SETTINGS.conversionRate)})
+                      </span>
+                    )}
                     <span class="track" aria-hidden="true">
                       <span class={`bar ${tone(o.value)}`} style={{ width: `${(Math.abs(o.value) / maxAbs) * 100}%` }} />
                     </span>
