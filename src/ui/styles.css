@@ -592,7 +592,7 @@ input[role='switch']:checked::after {
 .game {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: 1fr 1fr 90px;
+  grid-template-columns: 1fr 1fr;
   gap: 8px 10px;
 }
 
@@ -656,4 +656,8 @@ input[role='switch']:checked::after {
   .bar {
     transition: none;
   }
+}
+
+.bet .wide {
+  grid-column: 1 / -1;
 }
