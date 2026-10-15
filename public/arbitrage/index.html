@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arbitrage-Rechner</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --text:#1c2128; --muted:#667085; --line:#d9dde3; --accent:#2563eb; --good:#15803d; --bad:#b42318; --goodbg:#e7f6ec; --badbg:#fdecea; --fixbg:#fff4d6; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#12151a; --card:#1b2028; --text:#e8ebf0; --muted:#98a2b3; --line:#323944; --accent:#6b9bff; --good:#5fd38d; --bad:#ff8a80; --goodbg:#16301f; --badbg:#3a1d1b; --fixbg:#3b3318; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:16px/1.4 system-ui, sans-serif; }
+  main { max-width:760px; margin:0 auto; padding:16px; }
+  header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+  h1 { font-size:1.4rem; margin:0; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:12px; }
+  button { font:inherit; color:var(--text); background:var(--card); border:1px solid var(--line); border-radius:8px; padding:8px 12px; cursor:pointer; }
+  button:hover { border-color:var(--accent); }
+  input[type=text] { font:inherit; color:var(--text); background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:8px; width:100%; min-width:0; }
+  input[type=text]:focus { outline:2px solid var(--accent); border-color:transparent; }
+  table { width:100%; border-collapse:collapse; }
+  th { font-size:.75rem; font-weight:600; color:var(--muted); text-align:left; padding:0 4px 6px; }
+  td { padding:4px; vertical-align:middle; }
+  td.num { text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  td.steuer { text-align:center; }
+  .wrap { overflow-x:auto; }
+  tr.fixed input.stake { background:var(--fixbg); border-color:var(--accent); }
+  .row-buttons { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+  .verdict { display:inline-block; padding:4px 10px; border-radius:999px; font-weight:600; margin-bottom:8px; }
+  .verdict.ok { background:var(--goodbg); color:var(--good); }
+  .verdict.no { background:var(--badbg); color:var(--bad); }
+  .verdict.wait { background:var(--bg); color:var(--muted); }
+  dl { display:grid; grid-template-columns:1fr auto; gap:4px 12px; margin:0; }
+  dt { color:var(--muted); } dd { margin:0; text-align:right; font-variant-numeric:tabular-nums; font-weight:600; }
+  .pos { color:var(--good); } .neg { color:var(--bad); }
+  .hint { color:var(--muted); font-size:.85rem; margin:8px 0 0; }
+  dialog { background:var(--card); color:var(--text); border:1px solid var(--line); border-radius:12px; max-width:340px; width:calc(100% - 32px); }
+  dialog label { display:block; margin:8px 0 4px; font-size:.9rem; }
+  dialog::backdrop { background:rgba(0,0,0,.4); }
+  .unlock { padding:4px 8px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Arbitrage-Rechner</h1>
+    <button id="settingsBtn" title="Einstellungen" aria-label="Einstellungen">⚙</button>
+  </header>
+
+  <section class="card">
+    <div class="wrap">
+      <table>
+        <thead><tr><th>Ausgang</th><th>Quote</th><th title="Wettsteuer vom Gewinn">Steuer</th><th>Einsatz (€)</th><th class="num">Rückzahlung</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <div class="row-buttons">
+      <button id="addBtn">+ Ausgang</button>
+      <button id="removeBtn">− Ausgang</button>
+      <button id="resetBtn">Zurücksetzen</button>
+    </div>
+    <p class="hint" id="totalHint"></p>
+  </section>
+
+  <section class="card" id="result" aria-live="polite"></section>
+</main>
+
+<dialog id="settings">
+  <form method="dialog">
+    <h2 style="margin-top:0">Einstellungen</h2>
+    <label for="taxRate">Wettsteuer (% vom Gewinn)</label>
+    <input type="text" id="taxRate" inputmode="decimal">
+    <label for="defaultTotal">Gesamteinsatz ohne fixierten Einsatz (€)</label>
+    <input type="text" id="defaultTotal" inputmode="decimal">
+    <p class="hint">Die Steuer wird nur bei Quoten mit eingeschaltetem Steuer-Schalter abgezogen.</p>
+    <div class="row-buttons"><button value="close">Schließen</button></div>
+  </form>
+</dialog>
+
+<script>
+// ---- Rechenkern (rein, ohne Oberfläche) ----
+// CALC-START
+function parseNum(s) {
+  if (typeof s === 'number') return s;
+  const n = parseFloat(String(s).trim().replace(',', '.'));
+  return Number.isFinite(n) ? n : NaN;
+}
+
+// Effektive Quote: Steuer wird vom Gewinn abgezogen.
+function effectiveOdds(q, tax, taxRate) {
+  return tax ? 1 + (q - 1) * (1 - taxRate / 100) : q;
+}
+
+// rows: [{odds, tax, stake}] (stake = Zahl nur bei fixiertem Einsatz, sonst null)
+// Gibt null zurück, solange nicht alle Quoten gültig (> 1) sind.
+function calc(rows, taxRate, defaultTotal) {
+  const q = rows.map(r => effectiveOdds(r.odds, r.tax, taxRate));
+  if (q.some(x => !(x > 1))) return null;
+  const P = q.reduce((sum, x) => sum + 1 / x, 0);
+  const k = rows.findIndex(r => r.stake != null);
+  const total = k >= 0 ? rows[k].stake * q[k] * P : defaultTotal;
+  const stakes = q.map(x => (total / x) / P);
+  const payout = total / P;
+  return { P, margin: 1 / P - 1, total, stakes, payout, profit: payout - total, arbitrage: P < 1, fixedIndex: k };
+}
+// CALC-END
+
+// ---- Oberfläche ----
+const eur = n => n.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+const pct = n => (n * 100).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' %';
+const $ = id => document.getElementById(id);
+
+const state = { rows: [], fixed: -1, taxRate: 5.3, defaultTotal: 100 };
+const newRow = i => ({ name: 'Ausgang ' + (i + 1), odds: '', tax: false, stake: '' });
+function reset() { state.rows = [newRow(0), newRow(1)]; state.fixed = -1; build(); update(); }
+
+function build() {
+  const tbody = $('rows');
+  tbody.innerHTML = '';
+  state.rows.forEach((r, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="text" class="name" value="${r.name}" aria-label="Name Ausgang ${i + 1}"></td>
+      <td><input type="text" class="odds" inputmode="decimal" placeholder="z. B. 2,27" aria-label="Quote ${i + 1}"></td>
+      <td class="steuer"><input type="checkbox" class="tax" aria-label="Steuer bei Quote ${i + 1}"></td>
+      <td style="display:flex;gap:4px"><input type="text" class="stake" inputmode="decimal" aria-label="Einsatz ${i + 1}"><button class="unlock" title="Fixierung lösen" hidden>✕</button></td>
+      <td class="num pay">–</td>`;
+    tr.querySelector('.name').addEventListener('input', e => { r.name = e.target.value; update(); });
+    tr.querySelector('.odds').addEventListener('input', e => { r.odds = e.target.value; update(); });
+    tr.querySelector('.tax').addEventListener('change', e => { r.tax = e.target.checked; update(); });
+    tr.querySelector('.stake').addEventListener('input', e => {
+      r.stake = e.target.value;
+      state.fixed = e.target.value.trim() === '' ? (state.fixed === i ? -1 : state.fixed) : i;
+      update();
+    });
+    tr.querySelector('.unlock').addEventListener('click', () => { r.stake = ''; state.fixed = -1; update(); });
+    tbody.appendChild(tr);
+  });
+}
+
+function update() {
+  const taxRate = parseNum(state.taxRate), defTotal = parseNum(state.defaultTotal);
+  const trs = [...$('rows').children];
+  const fixedStake = state.fixed >= 0 ? parseNum(state.rows[state.fixed].stake) : NaN;
+  const input = state.rows.map((r, i) => ({
+    odds: parseNum(r.odds), tax: r.tax,
+    stake: i === state.fixed && fixedStake > 0 ? fixedStake : null,
+  }));
+  const res = Number.isFinite(taxRate) && defTotal > 0 ? calc(input, taxRate, defTotal) : null;
+
+  trs.forEach((tr, i) => {
+    const isFixed = i === state.fixed && fixedStake > 0;
+    tr.classList.toggle('fixed', isFixed);
+    tr.querySelector('.unlock').hidden = !isFixed;
+    const stakeEl = tr.querySelector('.stake');
+    if (!isFixed && document.activeElement !== stakeEl) stakeEl.value = res ? res.stakes[i].toFixed(2).replace('.', ',') : '';
+    tr.querySelector('.pay').textContent = res ? eur(res.stakes[i] * effectiveOdds(input[i].odds, input[i].tax, taxRate)) : '–';
+  });
+
+  $('totalHint').textContent = isFinite(fixedStake) && state.fixed >= 0 && fixedStake > 0
+    ? 'Einsatz fixiert, die übrigen Einsätze werden daraus berechnet.'
+    : 'Ohne fixierten Einsatz gilt der Gesamteinsatz ' + eur(isFinite(defTotal) ? defTotal : 0) + ' (Einstellungen). Einen Einsatz eintragen fixiert ihn.';
+
+  const box = $('result');
+  if (!res) { box.innerHTML = '<span class="verdict wait">Quoten eintragen (größer als 1)</span>'; return; }
+  const cls = res.profit >= 0 ? 'pos' : 'neg';
+  box.innerHTML = `
+    <span class="verdict ${res.arbitrage ? 'ok' : 'no'}">${res.arbitrage ? 'Arbitrage möglich' : 'Keine Arbitrage'}</span>
+    <dl>
+      <dt>Profitfaktor (Summe der Kehrwerte)</dt><dd>${res.P.toLocaleString('de-DE', { minimumFractionDigits: 4, maximumFractionDigits: 4 })}</dd>
+      <dt>Gewinnspanne</dt><dd class="${cls}">${pct(res.margin)}</dd>
+      <dt>Gesamteinsatz</dt><dd>${eur(res.total)}</dd>
+      <dt>Rückzahlung (bei jedem Ausgang)</dt><dd>${eur(res.payout)}</dd>
+      <dt>${res.profit >= 0 ? 'Gewinn' : 'Verlust'}</dt><dd class="${cls}">${eur(res.profit)}</dd>
+    </dl>
+    ${res.arbitrage ? '' : '<p class="hint">Profitfaktor ≥ 1: Die Einsätze sind trotzdem gleichmäßig verteilt, bringen aber einen Verlust.</p>'}`;
+}
+
+$('addBtn').addEventListener('click', () => { if (state.rows.length < 10) { state.rows.push(newRow(state.rows.length)); build(); restore(); update(); } });
+$('removeBtn').addEventListener('click', () => {
+  if (state.rows.length > 2) {
+    state.rows.pop();
+    if (state.fixed >= state.rows.length) state.fixed = -1;
+    build(); restore(); update();
+  }
+});
+$('resetBtn').addEventListener('click', reset);
+// Nach dem Neuaufbau der Tabelle die Eingaben wieder einsetzen
+function restore() {
+  [...$('rows').children].forEach((tr, i) => {
+    const r = state.rows[i];
+    tr.querySelector('.odds').value = r.odds;
+    tr.querySelector('.tax').checked = r.tax;
+    if (i === state.fixed) tr.querySelector('.stake').value = r.stake;
+  });
+}
+$('settingsBtn').addEventListener('click', () => $('settings').showModal());
+$('taxRate').addEventListener('input', e => { state.taxRate = e.target.value; update(); });
+$('defaultTotal').addEventListener('input', e => { state.defaultTotal = e.target.value; update(); });
+$('taxRate').value = '5,3';
+$('defaultTotal').value = '100';
+state.taxRate = '5,3'; state.defaultTotal = '100';
+reset();
+</script>
+</body>
+</html>
